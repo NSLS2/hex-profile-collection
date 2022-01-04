@@ -1,0 +1,19 @@
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: NSLS-II/profile-collection-ci
+      ref: refs/heads/main
+      endpoint: github
+
+jobs:
+# Add jobs as necessary
+#  - template: collection-2021-1.2.yml@templates
+#    parameters:
+#      beamline_acronym: {{ cookiecutter.beamline }}
+#  - template: nsls2-collection-2021-2.2.yml@templates
+#    parameters:
+#      beamline_acronym: {{ cookiecutter.beamline }}
+#  - template: nsls2-collection-2021-2.2-py39.yml@templates
+#    parameters:
+#      beamline_acronym: {{ cookiecutter.beamline }}

@@ -5,7 +5,9 @@ file_loading_timer.start_timer(__file__)
 #
 
 
-DATA_ROOT='/home/jwlodek/Documents/HEX'
+DATA_ROOT='/nsls2/data/hex/legacy/profile-testi'
+CYCLE='2022-3'
+PROPOSAL='pass-000000'
 
 
 file_loading_timer.stop_timer(__file__)

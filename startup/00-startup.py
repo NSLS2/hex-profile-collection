@@ -31,4 +31,4 @@ class FileLoadingTimer:
         self.loading = False
 
 
-file_load_timer = FileLoadingTimer()
+file_loading_timer = FileLoadingTimer()

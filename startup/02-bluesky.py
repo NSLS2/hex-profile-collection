@@ -21,14 +21,22 @@ from ophyd.areadetector.filestore_mixins import (FileStoreTIFFIterativeWrite,
                                                  )
 
 
-from ophyd import Component
+from ophyd import Component as Cpt, Kind
+from ophyd.status import SubscriptionStatus
+
+from bluesky import RunEngine
+from bluesky.plans import count
 
 from ophyd import Signal, EpicsSignal, EpicsSignalRO
 from nslsii.ad33 import SingleTriggerV33, StatsPluginV33
 from ophyd.areadetector import (EpicsSignalWithRBV as SignalWithRBV)
 
-from ophyd.device import BlueskyInterface
+from ophyd.device import BlueskyInterface, Device
 from ophyd.device import DeviceStatus
+
+
+#TODO - use configure base to create runengine
+RE = RunEngine({})
 
 
 file_loading_timer.stop_timer(__file__)

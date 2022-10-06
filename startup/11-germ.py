@@ -1,4 +1,4 @@
-
+file_loading_timer.start_timer(__file__)
 
 class GeRMDetector(Device):
 
@@ -77,5 +77,5 @@ class GeRMDetector(Device):
 # Intialize the GeRM detector ophyd object
 germ_detector = GeRMDetector("XF:27ID1-ES{GeRM-Det:1}", name="GeRM")
 
-
+file_loading_timer.stop_timer(__file__)
 

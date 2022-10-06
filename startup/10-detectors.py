@@ -212,35 +212,26 @@ def initialize_hex_detector(detector_type, detector_name, pv_prefix, read_path_t
         [description]
     """
 
-    try:
-        # Intialize object instance of specified detector type, along with tiff plugin
-        print(f'Initializing {detector_name.upper()} detector...')
-        detector_obj = detector_type(pv_prefix, name=detector_name,
-                                     read_attrs=['tiff', 'stats1.total'],
-                                     plugin_name='tiff')
-
-        # Adjust read/write path templates for tiff plugin if specified
-        if read_path_template is not None:
-            detector_obj.tiff.read_path_template = read_path_template
-        else:
-            detector_obj.tiff.read_path_template = f'{DATA_ROOT}/{detector_obj.name}_data/%Y/%m/%d/'
-
-        if write_path_template is not None:
-            detector_obj.tiff.write_path_template = write_path_template
-        else:
-            detector_obj.tiff.write_path_template = f'{DATA_ROOT}/{detector_obj.name}_data/%Y/%m/%d/'
-
-        # Make sure the detector is non-blocking
-        detector_obj.cam.ensure_nonblocking()
-
-        return detector_obj
-    except Exception as exc:
-        print(exc)
-        print(f'\nUnable to initiate {detector_name.upper()} camera. Is it connected, with a running IOC?')
-        pass
+    # Intialize object instance of specified detector type, along with tiff plugin
+    print(f'Initializing {detector_name.upper()} detector...')
+    detector_obj = detector_type(pv_prefix, name=detector_name)
+    # Adjust read/write path templates for tiff plugin if specified
+    if read_path_template is not None:
+        detector_obj.tiff.read_path_template = read_path_template
+    else:
+        detector_obj.tiff.read_path_template = f'{DATA_ROOT}/{detector_obj.name}_data/%Y/%m/%d/'
+    if write_path_template is not None:
+        detector_obj.tiff.write_path_template = write_path_template
+    else:
+        detector_obj.tiff.write_path_template = f'{DATA_ROOT}/{detector_obj.name}_data/%Y/%m/%d/'
+    # Make sure the detector is non-blocking
+    detector_obj.cam.ensure_nonblocking()
+    return detector_obj
+    print(f'\nUnable to initiate {detector_name.upper()} camera. Is it connected, with a running IOC?')
 
 
-sim_detector = initialize_hex_detector(HEXSimDetector, 'cam-sim1', '13SIM1:')
+
+sim_detector = SimDetector('XF:27ID1-BI{Sim-Det:1}', name='sim-det1')
 
 
 file_loading_timer.stop_timer(__file__)

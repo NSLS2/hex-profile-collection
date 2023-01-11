@@ -20,7 +20,8 @@ from ophyd.areadetector import (AreaDetector,
                                 CamBase,
                                 SimDetector,
                                 PvcamDetector,
-                                PvcamDetectorCam)
+                                PvcamDetectorCam,
+                                ADComponent)
 
 from ophyd.areadetector.filestore_mixins import (FileStoreTIFFIterativeWrite,
                                                  FileStoreHDF5IterativeWrite,
@@ -114,6 +115,7 @@ class ContinuousAcquisitionTrigger(BlueskyInterface):
 
 
 class HEXSimDetector(SimDetector):
+    stats1 = Component(StatsPluginV33, 'Stats1:', kind = 'hinted')
 
     tiff = Component(HEXTIFFPlugin, 'TIFF1:',
              write_path_template='/a/b/c/',
@@ -124,13 +126,51 @@ class HEXSimDetector(SimDetector):
              root=DATA_ROOT)
 
 
+from ophyd.areadetector import ProsilicaDetector, ProsilicaDetectorCam, SingleTrigger
+# from ophyd.areadetector.cam import AreaDetectorCam
+
+
+class ProsilicaTIFFPlugin(TIFFPlugin, FileStoreTIFFIterativeWrite):
+    pass
+
+
+class HEXProsilicaDetectorCam(ProsilicaDetectorCam):
+    wait_for_plugins = Component(EpicsSignal, 'WaitForPlugins',
+                                 string=True, kind='config')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.stage_sigs['wait_for_plugins'] = 'Yes'
+
+    def ensure_nonblocking(self):
+        self.stage_sigs['wait_for_plugins'] = 'Yes'
+        for c in self.parent.component_names:
+            cpt = getattr(self.parent, c)
+            if cpt is self:
+                continue
+            if hasattr(cpt, 'ensure_nonblocking'):
+                cpt.ensure_nonblocking()
+
+
+class HEXProsilicaDetector(SingleTrigger, ProsilicaDetector):
+    cam = Component(HEXProsilicaDetectorCam, "cam1:")
+    stats1 = Component(StatsPluginV33, 'Stats1:', kind = 'hinted')
+    proc = Component(ProcessPlugin, 'Proc1:')
+    tiff = Component(ProsilicaTIFFPlugin, 'TIFF1:',
+             write_path_template='/a/b/c/',
+             read_path_template='/a/b/c',
+             read_attrs=[],
+             root="/nsls2/data/hex/legacy")
+
+
 class KinetixDetectorCam(PvcamDetectorCam):
 
     wait_for_plugins = Component(EpicsSignal, 'WaitForPlugins',
                            string=True, kind='config')
 
     def __init__(self, *args, **kwargs):
-        super().__init(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.stage_sigs['wait_for_plugins'] = 'Yes'
 
@@ -166,7 +206,7 @@ class HEXKinetix(PvcamDetector):
     number_of_sets = Component(Signal, value=1, add_prefix=())
 
     pixel_size = Component(Signal, value=.000005, kind='config') #unknown
-    detector_type = Component(Signal, value='Emergent', kind='config')
+    detector_type = Component(Signal, value='Kinetix', kind='config')
     stats1 = Component(StatsPluginV33, 'Stats1:', kind = 'hinted')
     #stats2 = Component(StatsPluginV33, 'Stats2:')
     #stats3 = Component(StatsPluginV33, 'Stats3:')
@@ -232,6 +272,14 @@ def initialize_hex_detector(detector_type, detector_name, pv_prefix, read_path_t
 
 
 sim_detector = SimDetector('XF:27ID1-BI{Sim-Det:1}', name='sim-det1')
+# sim_detector.tiff.write_path_template = "/nsls2/data/hex/legacy/profile-test"
+# sim_detector.tiff.read_path_template = "/nsls2/data/hex/legacy/profile-test"
 
+foe_cam2 = HEXProsilicaDetector("XF:27IDA-BI{FAM:1-Cam:2}", name="foe_cam2")
+foe_cam2.tiff.write_path_template = "/nsls2/data/hex/legacy/profile-test/"
+foe_cam2.tiff.read_path_template = "/nsls2/data/hex/legacy/profile-test/"
+foe_cam2.cam.ensure_nonblocking()
+foe_cam2.stats1.kind = 'hinted'
+foe_cam2.stats1.total.kind = 'hinted'
 
 file_loading_timer.stop_timer(__file__)

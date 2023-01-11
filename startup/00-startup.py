@@ -4,8 +4,10 @@
 
 print('Loading NSLS-II HEX profile collection...')
 
-
 import time
+
+import matplotlib.pyplot as plt
+plt.ion()
 
 
 class FileLoadingTimer:

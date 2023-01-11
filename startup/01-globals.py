@@ -5,7 +5,7 @@ file_loading_timer.start_timer(__file__)
 #
 
 
-DATA_ROOT='/nsls2/data/hex/legacy/profile-testi'
+DATA_ROOT='/nsls2/data/hex/legacy/profile-test'
 CYCLE='2022-3'
 PROPOSAL='pass-000000'
 

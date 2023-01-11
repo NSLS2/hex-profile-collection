@@ -35,8 +35,14 @@ from ophyd.device import BlueskyInterface, Device
 from ophyd.device import DeviceStatus
 
 
-#TODO - use configure base to create runengine
+# TODO: uncomment once the databroker/mongo server is available, and remove the RE instantiation calls in 02-bluesky.py.
+# nslsii.configure_base(get_ipython().user_ns, "hex")
 RE = RunEngine({})
 
+from bluesky.callbacks.best_effort import BestEffortCallback
+import bluesky.plans as bp
+
+bec = BestEffortCallback()
+RE.subscribe(bec)
 
 file_loading_timer.stop_timer(__file__)

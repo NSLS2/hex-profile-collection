@@ -45,12 +45,11 @@ class FileLoadingTimer:
 
 EpicsSignalBase.set_defaults(timeout=10, connection_timeout=10)
 
+# The call below creates 'RE' and 'db' objects in the IPython user namespace.
 configure_base(get_ipython().user_ns,
                "hex",
                publish_documents_with_kafka=False,
                pbar=True)
-
-print(db[-1].table())
 
 runengine_metadata_dir = Path("/nsls2/data/hex/shared/config/runengine-metadata")
 

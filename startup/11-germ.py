@@ -13,7 +13,7 @@ class GeRMDetector(Device):
     fast_data_filename = Cpt(EpicsSignal, ".FNAM", string=True)
     operating_mode = Cpt(EpicsSignal, ".MODE",kind=Kind.omitted)
     single_auto_toggle = Cpt(EpicsSignal, ".CONT",kind=Kind.omitted)
-    Cpt(EpicsSignal, ".GMON",kind=Kind.omitted)
+    gmon = Cpt(EpicsSignal, ".GMON",kind=Kind.omitted)
     ip_addr = Cpt(EpicsSignal, ".IPADDR", string=True)
     temp_1 = Cpt(EpicsSignal, ":Temp1", kind = Kind.omitted)
     temp_2 = Cpt(EpicsSignal, ":Temp2", kind=Kind.omitted)
@@ -41,6 +41,8 @@ class GeRMDetector(Device):
     hv_bias = Cpt(EpicsSignal, ":HV",kind=Kind.omitted)
     ring_hi = Cpt(EpicsSignal, ":DRFTHI",kind=Kind.omitted)
     ring_lo = Cpt(EpicsSignal, ":DRFTLO",kind=Kind.omitted)
+    channel_enabled = Cpt(EpicsSignal, ".TSEN", kind=Kind.omitted)
+    energy = Cpt(EpicsSignal, ".SPCTX", kind=Kind.omitted)
 
 
     save_path = f"{DATA_ROOT}/{CYCLE}/{PROPOSAL}"
@@ -54,7 +56,7 @@ class GeRMDetector(Device):
 
             return False
 
-        
+
         status = SubscriptionStatus(self.count, run=False, callback = is_done)
 
         self.count.put(1)
@@ -64,18 +66,32 @@ class GeRMDetector(Device):
     def describe(self):
         desc = super().describe()
         return desc
-        
+
+
+    def get_current_image(self):
+        # This is the reshaping we want
+        # This doesn't trigger the detector
+        data = self.mca.get()
+        height = int(self.number_of_channels.get())
+        width = len(self.energy.get())
+        data = np.reshape(data, (height, width))
+        return data
+
 
     def write_mca_hdf5(self):
         mca = self.mca.get()
-        print(mca)    
+        print(mca)
 
 
 #    def write_tdc_hdf5(self):
 
 
+
+
 # Intialize the GeRM detector ophyd object
 germ_detector = GeRMDetector("XF:27ID1-ES{GeRM-Det:1}", name="GeRM")
+
+
 
 file_loading_timer.stop_timer(__file__)
 

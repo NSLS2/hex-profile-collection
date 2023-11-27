@@ -13,3 +13,9 @@ def acquire_germ_detector(count_time, detector=germ_detector, num=1):
     yield from bps.mv(detector.count_time, count_time)
     uid = (yield from bp.count([detector], num=num))
     return uid
+
+
+def count_germ(count_time=1, num=10, detector=germ_detector_hdf5):
+    yield from bps.mv(detector.count_time, count_time)
+    uid = (yield from bp.count([detector], num=num))
+    return uid

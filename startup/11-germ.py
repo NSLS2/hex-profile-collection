@@ -2,17 +2,21 @@ file_loading_timer.start_timer(__file__)
 
 import os
 import datetime
+import h5py
 import uuid
 from PIL import Image
 import tifffile
 import numpy as np
+import itertools
+
 
 from event_model import compose_resource
 from collections import deque
 from ophyd import Signal, Device, EpicsSignal, Component as Cpt, Kind
 from ophyd.status import SubscriptionStatus
 from area_detector_handlers import HandlerBase
-
+from ophyd.sim import NullStatus, new_uid
+from pathlib import Path
 
 ROOT_DIR = "/nsls2/data/hex/proposals/commissioning/pass-312143/temp"
 
@@ -35,7 +39,7 @@ class ExternalFileReference(Signal):
 
 class GeRMDetector(Device):
     count = Cpt(EpicsSignal, ".CNT", kind=Kind.omitted)
-    mca = Cpt(EpicsSignal, ".MCA", kind=Kind.hinted)
+    mca = Cpt(EpicsSignal, ".MCA", kind=Kind.omitted)
     number_of_channels = Cpt(EpicsSignal, ".NELM", kind=Kind.config)
     gain = Cpt(EpicsSignal, ".GAIN", kind=Kind.config)
     shaping_time = Cpt(EpicsSignal, ".SHPT", kind=Kind.config)
@@ -173,16 +177,203 @@ class GeRMDetector(Device):
                     check = False
         return file_path
 
-    # def write_mca_hdf5(self):
-    #     mca = self.mca.get()
-    #     print(mca)
 
+class GeRMDetectorHDF5(GeRMDetector):
+
+    def stage(self):
+        super().stage()
+        date = datetime.datetime.now()
+        self._assets_dir = date.strftime("%Y/%m/%d")
+        data_file = f"{new_uid()}.h5"
+
+        self._resource_document, self._datum_factory, _ = compose_resource(
+            start={"uid": "needed for compose_resource() but will be discarded"},
+            spec="AD_HDF5_GERM",
+            root=ROOT_DIR,
+            resource_path=str(Path(self._assets_dir) / Path(data_file)),
+            resource_kwargs={},
+        )
+
+        self._data_file = str(
+            Path(self._resource_document["root"])
+            / Path(self._resource_document["resource_path"])
+        )
+
+        # now discard the start uid, a real one will be added later
+        self._resource_document.pop("run_start")
+        self._asset_docs_cache.append(("resource", self._resource_document))
+
+        height = int(self.number_of_channels.get())
+        width = len(self.energy.get())
+        self._frame_shape = (height, width)
+
+        self._h5file_desc = h5py.File(self._data_file, "x")
+        group = self._h5file_desc.create_group("/entry")
+        self._dataset = group.create_dataset("data/data",
+                                             data=np.full(fill_value=np.nan,
+                                                          shape=(1, *self._frame_shape)),
+                                             maxshape=(None, *self._frame_shape),
+                                             chunks=(1, *self._frame_shape),
+                                             dtype="float32")
+        # add group to track motors
+        # current method of getting motors is using caget
+        #   should find a better way to do this
+        # Should this be tracked through the bluesky plan?
+        # Then how would we add this metadata to the hdf5 file?
+        self._counter = itertools.count()
+
+    # def stage(self):
+    #     # TODO: Open and set up hdf5 file
+    #     # # self.count_time.set()  # bluesky plan arg
+    #     # hdf_file_path = output_folder + "/" + file_name + ".hdf"
+    #     # # depth = len(list_pos)  # bluesky plan
+    #     # dataset_shape = (depth, height, width)
+    #     # # metadata_group = ["entry/static_motors/" + group for group in group_names]
+    #     # # metadata_list.append({"command_used" : ' '.join(sys.argv)})
+    #     # # metadata_group.append("entry/information")
+    #     # # if user_input != "":
+    #     # #     metadata_list.append({"scan_description" : user_input})
+    #     # #     metadata_group.append("entry/information")
+    #     # self.writer = HDF5Writer(hdf_file_path, dataset_shape, overwrite=True)
+    #     ...
+
+    def trigger(self):
+        # Write image to open hdf5 file
+        # deco.move_motor(moto_pv_name, pos)  # do in bluesky plan
+        def is_done(value, old_value, **kwargs):
+            if old_value == 1 and value == 0:
+                return True
+
+            return False
+
+        status = SubscriptionStatus(self.count, run=False, callback=is_done)
+
+        self.count.put(1)
+        status.wait()
+
+        data = self.get_current_image()
+
+        current_frame = next(self._counter)
+        self._dataset.resize((current_frame + 1, *self._frame_shape))
+        self._dataset[current_frame, :, :] = data
+
+        datum_document = self._datum_factory(datum_kwargs={"frame": current_frame})
+        self._asset_docs_cache.append(("datum", datum_document))
+
+        self.image.put(datum_document["datum_id"])
+
+        # TODO: finish writing image logic
+        # scan_params = {real_moto_name: pos}
+        # self.writer.save_data(data, scan_params=scan_params, metadata=metadata_list, metadata_group=metadata_group)
+
+        return status
+
+    def describe(self):
+        res = super().describe()
+        res[self.image.name].update(dict(shape=self._frame_shape))
+        return res
+
+    def unstage(self):
+        super().unstage()
+        # del self._dataset
+        self._h5file_desc.close()
+        self._resource_document = None
+        self._datum_factory = None
+
+
+class HDF5Writer:
+    def __init__(self, output_path, dataset_shape, data_type="float32",
+                 group_name="entry", overwrite=False):
+        self.output_path = output_path
+        self.current_index = 0
+
+        if overwrite:
+            if os.path.exists(self.output_path):
+                os.remove(self.output_path)
+        else:
+            if os.path.exists(self.output_path):
+                raise ValueError("File exists! Please provide a new name!!!")
+
+        self.make_folder()
+        # Open hdf stream
+        self.h5_file = h5py.File(self.output_path, 'a')  # open in append mode
+        self.entry_grp = self.h5_file.require_group(group_name)
+        self.data_grp = self.entry_grp.require_group("data")
+
+        # Create a 3D dataset for storing images
+        if "images" not in self.data_grp:
+            self.dataset = self.data_grp.create_dataset("images",
+                                                        dataset_shape,
+                                                        dtype=data_type)
+        else:
+            self.dataset = self.data_grp["images"]
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.h5_file:
+            self.h5_file.close()
+
+    def make_folder(self):
+        dir_name = os.path.dirname(self.output_path)
+        os.makedirs(dir_name, exist_ok=True)
+
+    def get_dtype(self, value):
+        if isinstance(value, str):
+            return h5py.special_dtype(vlen=str)
+        elif isinstance(value, float):
+            return np.float32
+        elif isinstance(value, int):
+            return np.int32
+        else:
+            return type(value)
+
+    def save_data(self, image, scan_params=None, metadata=None,
+                  metadata_group=None):
+        try:
+            self.dataset[self.current_index] = image
+            if scan_params is not None:
+                if "scanning_parameters" not in self.entry_grp:
+                    self.scan_params_grp = self.entry_grp.require_group(
+                        "scanning_parameters")
+                for key, value in scan_params.items():
+                    param_dataset_name = f"{key}_values"
+                    if param_dataset_name not in self.scan_params_grp:
+                        dtype = self.get_dtype(value)
+                        param_dset = self.scan_params_grp.create_dataset(
+                            param_dataset_name, (self.dataset.shape[0],),
+                            dtype=dtype)
+                    else:
+                        param_dset = self.scan_params_grp[param_dataset_name]
+                    param_dset[self.current_index] = value
+            if metadata and metadata_group:
+                if len(metadata) != len(metadata_group):
+                    raise ValueError("Length of metadata list must match the "
+                                     "length of metadata_group list")
+                for idx, meta in enumerate(metadata):
+                    current_metadata_grp = self.h5_file.require_group(
+                        metadata_group[idx])
+                    for key, value in meta.items():
+                        if key not in current_metadata_grp:
+                            dtype = self.get_dtype(value)
+                            current_metadata_grp.create_dataset(key,
+                                                                data=value,
+                                                                dtype=dtype)
+            self.current_index += 1
+        except Exception as e:
+            raise ValueError("Failed to save data due to: {}".format(e))
+
+    def close(self):
+        if self.h5_file:
+            self.h5_file.close()
 
 # Intialize the GeRM detector ophyd object
 germ_detector = GeRMDetector("XF:27ID1-ES{GeRM-Det:1}", name="GeRM")
+germ_detector_hdf5 = GeRMDetectorHDF5("XF:27ID1-ES{GeRM-Det:1}", name="GeRM")
 
 
-class AreaDetectorTiffHandlerHEX(HandlerBase):
+class AreaDetectorTiffHandlerGERM(HandlerBase):
     specs = {"AD_TIFF_GERM"}
 
     def __init__(self, fpath):
@@ -195,7 +386,19 @@ class AreaDetectorTiffHandlerHEX(HandlerBase):
         return np.array(ret)
 
 
-db.reg.register_handler("AD_TIFF_GERM", AreaDetectorTiffHandlerHEX)
+class AreaDetectorHDF5HandlerGERM(HandlerBase):
+    specs = {"AD_HDF5_GERM"}
+    def __init__(self, filename):
+        self._name = filename
+
+    def __call__(self, frame):
+        with h5py.File(self._name, "r") as f:
+            entry = f["/entry/data/data"]
+            return entry[frame, :]
+
+
+db.reg.register_handler("AD_TIFF_GERM", AreaDetectorTiffHandlerGERM)
+db.reg.register_handler("AD_HDF5_GERM", AreaDetectorHDF5HandlerGERM)
 
 
 file_loading_timer.stop_timer(__file__)

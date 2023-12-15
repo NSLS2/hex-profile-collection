@@ -21,7 +21,7 @@ class SampleTower(Device):
     roll = Cpt(EpicsMotor, "Rz}Mtr")
 
     x2 = Cpt(EpicsMotor, "X2}Mtr")
-    z2 = Cpt(EpicsMotor, "X2}Mtr")
+    z2 = Cpt(EpicsMotor, "Z2}Mtr")
 
     rx1 = Cpt(EpicsMotor, "Rx1}Mtr")    
     ry1 = Cpt(EpicsMotor, "Ry1}Mtr")
@@ -58,7 +58,7 @@ class SampleTower(Device):
     def get_css_name(self, motor_name):
         try:
             motor = getattr(self, motor_name)
-            css_name = epics.caget(motor.prefix + ".DESC")
+            css_name = epics.caget(motor.prefix + ".DESC") # To be replaced by EpicsSignal
             return css_name
         except AttributeError:
             return "No such motor name: {}!".format(motor_name)

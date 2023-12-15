@@ -38,7 +38,7 @@ class ExternalFileReference(Signal):
 
 
 class GeRMDetector(Device):
-    count = Cpt(EpicsSignal, ".CNT", kind=Kind.omitted)
+    count = Cpt(EpicsSignal, ".CNT", kind=Kind.omitted, string=True)
     mca = Cpt(EpicsSignal, ".MCA", kind=Kind.omitted)
     number_of_channels = Cpt(EpicsSignal, ".NELM", kind=Kind.config)
     gain = Cpt(EpicsSignal, ".GAIN", kind=Kind.config)
@@ -46,11 +46,11 @@ class GeRMDetector(Device):
     count_time = Cpt(EpicsSignal, ".TP", kind=Kind.config)
     auto_time = Cpt(EpicsSignal, ".TP1", kind=Kind.config)
     run_num = Cpt(EpicsSignal, ".RUNNO", kind=Kind.omitted)
-    fast_data_filename = Cpt(EpicsSignal, ".FNAM", string=True)
+    fast_data_filename = Cpt(EpicsSignal, ".FNAM", string=True, kind=Kind.config)
     operating_mode = Cpt(EpicsSignal, ".MODE", kind=Kind.omitted)
     single_auto_toggle = Cpt(EpicsSignal, ".CONT", kind=Kind.omitted)
     gmon = Cpt(EpicsSignal, ".GMON", kind=Kind.omitted)
-    ip_addr = Cpt(EpicsSignal, ".IPADDR", string=True)
+    ip_addr = Cpt(EpicsSignal, ".IPADDR", string=True, kind=Kind.omitted)
     temp_1 = Cpt(EpicsSignal, ":Temp1", kind=Kind.omitted)
     temp_2 = Cpt(EpicsSignal, ":Temp2", kind=Kind.omitted)
     fpga_cpu_temp = Cpt(EpicsSignal, ":ztmp", kind=Kind.omitted)
@@ -68,13 +68,13 @@ class GeRMDetector(Device):
     test_pulce_enable = Cpt(EpicsSignal, ".TPENB", kind=Kind.omitted)
     test_pulse_count = Cpt(EpicsSignal, ".TPCNT", kind=Kind.omitted)
     input_polarity = Cpt(EpicsSignal, ".POL", kind=Kind.omitted)
-    voltage = Cpt(EpicsSignal, ":HV_RBV", kind=Kind.omitted)
+    voltage = Cpt(EpicsSignal, ":HV_RBV", kind=Kind.config)
     current = Cpt(EpicsSignal, ":HV_CUR", kind=Kind.omitted)
     peltier_2 = Cpt(EpicsSignal, ":P2", kind=Kind.omitted)
     peliter_2_current = Cpt(EpicsSignal, ":P2_CUR", kind=Kind.omitted)
     peltier_1 = Cpt(EpicsSignal, ":P1", kind=Kind.omitted)
     peltier_1_current = Cpt(EpicsSignal, ":P1_CUR", kind=Kind.omitted)
-    hv_bias = Cpt(EpicsSignal, ":HV", kind=Kind.omitted)
+    hv_bias = Cpt(EpicsSignal, ":HV", kind=Kind.config)
     ring_hi = Cpt(EpicsSignal, ":DRFTHI", kind=Kind.omitted)
     ring_lo = Cpt(EpicsSignal, ":DRFTLO", kind=Kind.omitted)
     channel_enabled = Cpt(EpicsSignal, ".TSEN", kind=Kind.omitted)
@@ -93,14 +93,14 @@ class GeRMDetector(Device):
 
     def trigger(self):
         def is_done(value, old_value, **kwargs):
-            if old_value == 1 and value == 0:
+            if old_value == "Count" and value == "Done":
                 return True
 
             return False
 
         status = SubscriptionStatus(self.count, run=False, callback=is_done)
 
-        self.count.put(1)
+        self.count.put("Count")
         status.wait()
 
         # Read the image array:
@@ -179,9 +179,18 @@ class GeRMDetector(Device):
 
 
 class GeRMDetectorHDF5(GeRMDetector):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        height = int(self.number_of_channels.get())
+        width = len(self.energy.get())
+        self._frame_shape = (height, width)
 
     def stage(self):
         super().stage()
+
+        # Clear asset docs cache which may have some documents from the previous failed run.
+        self._asset_docs_cache.clear()
+
         date = datetime.datetime.now()
         self._assets_dir = date.strftime("%Y/%m/%d")
         data_file = f"{new_uid()}.h5"
@@ -202,10 +211,6 @@ class GeRMDetectorHDF5(GeRMDetector):
         # now discard the start uid, a real one will be added later
         self._resource_document.pop("run_start")
         self._asset_docs_cache.append(("resource", self._resource_document))
-
-        height = int(self.number_of_channels.get())
-        width = len(self.energy.get())
-        self._frame_shape = (height, width)
 
         self._h5file_desc = h5py.File(self._data_file, "x")
         group = self._h5file_desc.create_group("/entry")
@@ -241,30 +246,25 @@ class GeRMDetectorHDF5(GeRMDetector):
         # Write image to open hdf5 file
         # deco.move_motor(moto_pv_name, pos)  # do in bluesky plan
         def is_done(value, old_value, **kwargs):
-            if old_value == 1 and value == 0:
+            if old_value == "Count" and value == "Done":
+                data = self.get_current_image()
+
+                self._dataset.resize((self.current_frame + 1, *self._frame_shape))
+                self._dataset[self.current_frame, :, :] = data
+
                 return True
 
             return False
 
         status = SubscriptionStatus(self.count, run=False, callback=is_done)
 
-        self.count.put(1)
-        status.wait()
+        self.current_frame = next(self._counter)
+        self.count.put("Count")
 
-        data = self.get_current_image()
-
-        current_frame = next(self._counter)
-        self._dataset.resize((current_frame + 1, *self._frame_shape))
-        self._dataset[current_frame, :, :] = data
-
-        datum_document = self._datum_factory(datum_kwargs={"frame": current_frame})
+        datum_document = self._datum_factory(datum_kwargs={"frame": self.current_frame})
         self._asset_docs_cache.append(("datum", datum_document))
 
         self.image.put(datum_document["datum_id"])
-
-        # TODO: finish writing image logic
-        # scan_params = {real_moto_name: pos}
-        # self.writer.save_data(data, scan_params=scan_params, metadata=metadata_list, metadata_group=metadata_group)
 
         return status
 
@@ -397,8 +397,72 @@ class AreaDetectorHDF5HandlerGERM(HandlerBase):
             return entry[frame, :]
 
 
-db.reg.register_handler("AD_TIFF_GERM", AreaDetectorTiffHandlerGERM)
-db.reg.register_handler("AD_HDF5_GERM", AreaDetectorHDF5HandlerGERM)
+db.reg.register_handler("AD_TIFF_GERM", AreaDetectorTiffHandlerGERM, overwrite=True)
+db.reg.register_handler("AD_HDF5_GERM", AreaDetectorHDF5HandlerGERM, overwrite=True)
+
+
+def nx_export_callback(name, doc):
+    print(f"Exporting the nx file at {datetime.datetime.now().isoformat()}")
+    if name == "stop":
+        run_start = doc["run_start"]
+        # TODO: rewrite with SingleRunCache.
+        hdr = db[run_start]
+        for nn, dd in hdr.documents():
+            if nn == "resource" and dd["spec"] == "AD_HDF5_GERM":
+                resource_root = dd["root"]
+                resource_path = dd["resource_path"]
+                h5_filepath = os.path.join(resource_root, resource_path)
+                nx_filepath = f"{os.path.splitext(h5_filepath)[0]}.nxs"
+                # TODO 1: prepare metadata
+                # TODO 2: save .nxs file
+
+                def get_dtype(value):
+                    if isinstance(value, str):
+                        return h5py.special_dtype(vlen=str)
+                    elif isinstance(value, float):
+                        return np.float32
+                    elif isinstance(value, int):
+                        return np.int32
+                    else:
+                        return type(value)
+
+                with h5py.File(nx_filepath, 'w') as h5_file:
+                    entry_grp = h5_file.require_group("entry")
+                    data_grp = entry_grp.require_group("data")
+
+                    meta_dict = get_detector_parameters()
+                    for k, v in meta_dict.items():
+                        meta = v
+                        break
+                    current_metadata_grp = h5_file.require_group("entry/instrument/detector")  # TODO: fix the location later.
+                    for key, value in meta.items():
+                        if key not in current_metadata_grp:
+                            dtype = get_dtype(value)
+                            current_metadata_grp.create_dataset(key, data=value, dtype=dtype)
+
+                    # External link
+                    data_grp["data"] = h5py.ExternalLink(h5_filepath, "entry/data/data")
+
+
+GERM_DETECTOR_KEYS = [
+    "count_time",
+    "gain",
+    "shaping_time",
+    "hv_bias",
+    "voltage",
+]
+
+def get_detector_parameters(det=germ_detector_hdf5, keys=GERM_DETECTOR_KEYS):
+    group_key = f"{det.name.lower()}_detector"
+    detector_metadata = {group_key : {}}
+    for key in keys:
+        obj = getattr(det, key)
+        as_string = True if obj.enum_strs else False
+        detector_metadata[group_key][key] = obj.get(as_string=as_string)
+    return detector_metadata
+
+
+RE.subscribe(nx_export_callback, name="stop")
 
 
 file_loading_timer.stop_timer(__file__)

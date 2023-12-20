@@ -3,9 +3,14 @@ Ophyd objects for motors
 
 """
 
-import epics
 from ophyd import EpicsMotor, Device
-from ophyd import Component as Cpt
+from ophyd import Component as Cpt, EpicsSignalRO
+from ophyd import Kind
+
+
+class EpicsMotorWithDescription(EpicsMotor):
+    """Based on the Misc. chapter at https://epics.anl.gov/EpicsDocumentation/AppDevManuals/RecordRef/Recordref-6.html."""
+    desc = Cpt(EpicsSignalRO, ".DESC", kind=Kind.config)
 
 
 class SampleTower(Device):
@@ -14,18 +19,18 @@ class SampleTower(Device):
     """
 
     # Define a list of objects corresponding to motors of the sample tower    
-    axis_x1 = Cpt(EpicsMotor, "X1}Mtr")
-    axis_z1 = Cpt(EpicsMotor, "Z1}Mtr")
-    pitch = Cpt(EpicsMotor, "Rx}Mtr")
-    vertical_y = Cpt(EpicsMotor, "Y}Mtr")
-    roll = Cpt(EpicsMotor, "Rz}Mtr")
+    axis_x1 = Cpt(EpicsMotorWithDescription, "X1}Mtr")
+    axis_z1 = Cpt(EpicsMotorWithDescription, "Z1}Mtr")
+    pitch = Cpt(EpicsMotorWithDescription, "Rx}Mtr")
+    vertical_y = Cpt(EpicsMotorWithDescription, "Y}Mtr")
+    roll = Cpt(EpicsMotorWithDescription, "Rz}Mtr")
 
-    x2 = Cpt(EpicsMotor, "X2}Mtr")
-    z2 = Cpt(EpicsMotor, "Z2}Mtr")
+    x2 = Cpt(EpicsMotorWithDescription, "X2}Mtr")
+    z2 = Cpt(EpicsMotorWithDescription, "Z2}Mtr")
 
-    rx1 = Cpt(EpicsMotor, "Rx1}Mtr")    
-    ry1 = Cpt(EpicsMotor, "Ry1}Mtr")
-    rz1 = Cpt(EpicsMotor, "Rz1}Mtr")
+    rx1 = Cpt(EpicsMotorWithDescription, "Rx1}Mtr")    
+    ry1 = Cpt(EpicsMotorWithDescription, "Ry1}Mtr")
+    rz1 = Cpt(EpicsMotorWithDescription, "Rz1}Mtr")
 
     def get_motor_list(self):
         motor_list = []
@@ -58,15 +63,32 @@ class SampleTower(Device):
     def get_css_name(self, motor_name):
         try:
             motor = getattr(self, motor_name)
-            css_name = epics.caget(motor.prefix + ".DESC") # To be replaced by EpicsSignal
+            css_name = motor.desc.get()
             return css_name
         except AttributeError:
             return "No such motor name: {}!".format(motor_name)
    
 
 class HEXMonochromator(Device):
-
     xtal2_z = Cpt(EpicsMotor, "Z2}Mtr")
+
 
 mono = HEXMonochromator("XF:27IDA-OP:1{Mono:DCLM-Ax:", name="mono")
 sample_tower = SampleTower("XF:27IDF-OP:1{SMPL:1-Ax:", name="sample_tower")
+
+
+class MotorValuesMCA1(Device):
+    fltr1u = Cpt(EpicsSignalRO, "1{Fltr:1-Ax:Yu}Mtr.RBV", kind=Kind.normal)
+    fltr1d = Cpt(EpicsSignalRO, "1{Fltr:1-Ax:Yd}Mtr.RBV", kind=Kind.normal)
+    fltr2 = Cpt(EpicsSignalRO, "1{Fltr:2-Ax:Y}Mtr.RBV", kind=Kind.normal)
+    fltr3 = Cpt(EpicsSignalRO, "3{Fltr:3-Ax:Y}Mtr.RBV", kind=Kind.normal)
+    sliti = Cpt(EpicsSignalRO, "1{Slt:1-Ax:I}Mtr.RBV", kind=Kind.normal)
+    slito = Cpt(EpicsSignalRO, "1{Slt:1-Ax:O}Mtr.RBV", kind=Kind.normal)
+    slitb = Cpt(EpicsSignalRO, "1{Slt:1-Ax:B}Mtr.RBV", kind=Kind.normal)
+    slitt = Cpt(EpicsSignalRO, "1{Slt:1-Ax:T}Mtr.RBV", kind=Kind.normal)
+
+
+mca1_motors = MotorValuesMCA1("XF:27IDA-OP:", name="mca1_motors", kind=Kind.normal)
+
+# sd (SuppelementalData) is an attribute of RE, defined in the nslsii.__init__().
+sd.baseline += [getattr(mca1_motors, m) for m in mca1_motors.component_names]

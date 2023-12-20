@@ -401,6 +401,7 @@ db.reg.register_handler("AD_TIFF_GERM", AreaDetectorTiffHandlerGERM, overwrite=T
 db.reg.register_handler("AD_HDF5_GERM", AreaDetectorHDF5HandlerGERM, overwrite=True)
 
 
+# TODO: rework the exported based on Tiled.
 def nx_export_callback(name, doc):
     print(f"Exporting the nx file at {datetime.datetime.now().isoformat()}")
     if name == "stop":

@@ -14,7 +14,7 @@ from pathlib import Path
 import h5py
 import numpy as np
 from caproto import ChannelType
-from caproto.server import PVGroup, get_pv_pair_wrapper, ioc_arg_parser, pvproperty, run
+from caproto.server import PVGroup, ioc_arg_parser, pvproperty, run
 from ophyd.status import SubscriptionStatus
 
 from germ_ophyd import GeRMDetectorHDF5
@@ -112,6 +112,9 @@ class GeRMSaveIOC(PVGroup):
     @count.putter
     @no_reentry
     async def count(self, instance, value):
+        if value != "acquiring":
+            return 0
+
         def is_done(value, old_value, **kwargs):
             if old_value == "Count" and value == "Done":
                 return True

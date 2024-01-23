@@ -115,6 +115,12 @@ class GeRMSaveIOC(PVGroup):
         if value != "acquiring":
             return 0
 
+        if instance.value in [True, "acquiring"] and value == "acquiring":
+            print(
+                "The device is already acquiring. Please wait until the 'idle' status."
+            )
+            return 1
+
         def is_done(value, old_value, **kwargs):
             if old_value == "Count" and value == "Done":
                 return True
@@ -134,9 +140,8 @@ class GeRMSaveIOC(PVGroup):
                     self.frame_num.value, :, :
                 ] = self.ophyd_det.get_current_image()
                 self._dataset.flush()
+                await self.frame_num.write(self.frame_num.value + 1)
                 break
-
-        await self.frame_num.write(self.frame_num.value + 1)
 
         return 0
 

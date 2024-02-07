@@ -15,7 +15,7 @@ def acquire_germ_detector(count_time, detector=germ_detector, num=1):
     return uid
 
 
-def count_germ(count_time=1, num=10, detector=germ_detector_hdf5):
+def count_germ(count_time, num=1, detector=germ_detector):
     yield from bps.mv(detector.count_time, count_time)
     uid = (yield from bp.count([detector], num=num))
     return uid
@@ -24,7 +24,7 @@ def count_germ(count_time=1, num=10, detector=germ_detector_hdf5):
 def sweep_motion(detector, count_time, motor, start, stop, max_moves=1000):
     # TODO: update the metadata to record motor/detector information.
     """
-        From "RE(bp.scan([germ_detector_hdf5], sample_tower.axis_z1, 7, 7.5, 5))":
+        From "RE(bp.scan([germ_detector], sample_tower.axis_z1, 7, 7.5, 5))":
         {'uid': 'ec41ecd1-1357-42e9-8959-6180fecf8375',
         'time': 1703101850.4261565,
         'beamline_id': 'HEX',

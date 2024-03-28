@@ -27,7 +27,9 @@ from ophyd_async.core import (
 from ophyd_async.core.async_status import AsyncStatus
 from ophyd_async.core.detector import StandardDetector
 from ophyd_async.core.device import DeviceCollector
-from ophyd_async.epics.areadetector.controllers.kinetix_controller import KinetixController
+from ophyd_async.epics.areadetector.controllers.kinetix_controller import (
+    KinetixController,
+)
 from ophyd_async.epics.areadetector.drivers.kinetix_driver import KinetixDriver
 from ophyd_async.epics.areadetector.writers.hdf_writer import HDFWriter
 from ophyd_async.epics.areadetector.writers.nd_file_hdf import NDFileHDF
@@ -89,7 +91,9 @@ class KinetixShapeProvider(ShapeProvider):
 def instantiate_panda_async():
     with DeviceCollector():
         kinetix_async = KinetixDriver(KINETIX_PV_PREFIX + "cam1:")
-        hdf_plugin_kinetix = NDFileHDF(KINETIX_PV_PREFIX + "HDF1:", name="kinetix_hdf_plugin")
+        hdf_plugin_kinetix = NDFileHDF(
+            KINETIX_PV_PREFIX + "HDF1:", name="kinetix_hdf_plugin"
+        )
 
     with DeviceCollector():
         dir_prov = UUIDDirectoryProvider(PROPOSAL_DIR)
@@ -112,7 +116,9 @@ kinetix_standard_det = StandardDetector(
 )
 
 
-kinetix_flyer = HardwareTriggeredFlyable(kinetix_trigger_logic, [], name="kinetix_flyer")
+kinetix_flyer = HardwareTriggeredFlyable(
+    kinetix_trigger_logic, [], name="kinetix_flyer"
+)
 
 
 def kinetix_stage():
@@ -166,14 +172,6 @@ def kinetix_fly(num=10, exposure_time=0.1, software_trigger=True):
     yield from bps.close_run()
 
     yield from bps.unstage_all(kinetix_flyer, kinetix_standard_det)
-
-
-
-
-
-
-
-
 
 
 file_loading_timer.stop_timer(__file__)

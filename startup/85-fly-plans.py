@@ -6,7 +6,7 @@ DEG_PER_REVOLUTION = 360
 COUNTS_PER_DEG = COUNTS_PER_REVOLUTION / DEG_PER_REVOLUTION
 ZERO_OFFSET = 39660
 
-TOMO_ROTARY_STAGE_FAST_VELO=30
+TOMO_ROTARY_STAGE_FAST_VELO = 30
 
 
 def tomo_demo_async(num_images=1801, scan_time=20, start_deg=0, exposure_time=0.015):
@@ -29,7 +29,9 @@ def tomo_demo_async(num_images=1801, scan_time=20, start_deg=0, exposure_time=0.
     camera_exposure_time = exposure_time
 
     kinetix_exp_setup = KinetixTriggerSetup(
-        num_images=num_images, exposure_time=camera_exposure_time, software_trigger=False
+        num_images=num_images,
+        exposure_time=camera_exposure_time,
+        software_trigger=False,
     )
 
     yield from bps.mv(
@@ -126,7 +128,6 @@ def tomo_demo_async(num_images=1801, scan_time=20, start_deg=0, exposure_time=0.
 
     # Reset the velocity back to high.
     yield from bps.mv(tomo_rot_axis.velocity, TOMO_ROTARY_STAGE_FAST_VELO)
-
 
 
 file_loading_timer.stop_timer(__file__)

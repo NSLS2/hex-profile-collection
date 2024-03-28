@@ -1,38 +1,28 @@
-
-
 # Begin loading HEX Profile Collection
 
-print('Loading NSLS-II HEX profile collection...')
-
-import time
-
-from nslsii import configure_base
-from ophyd.signal import EpicsSignalBase
-
-import logging
-import os
-from pathlib import Path
-
-from bluesky.utils import PersistentDict
-from IPython import get_ipython
-
-import matplotlib.pyplot as plt
+print("Loading NSLS-II HEX profile collection...")
 
 import asyncio
 import datetime
 import logging
 import os
 import subprocess
+import time
 import warnings
+from pathlib import Path
 
 import epicscorelibs.path.pyepics
+import matplotlib.pyplot as plt
 import nslsii
 import ophyd.signal
 from bluesky.callbacks.broker import post_run, verify_files_saved
 from bluesky.callbacks.tiled_writer import TiledWriter
 from bluesky.run_engine import RunEngine, call_in_bluesky_event_loop
+from bluesky.utils import PersistentDict
 from databroker.v0 import Broker
 from IPython import get_ipython
+from nslsii import configure_base
+from ophyd.signal import EpicsSignalBase
 from tiled.client import from_uri
 
 plt.ion()
@@ -44,20 +34,18 @@ class FileLoadingTimer:
         self.start_time = 0
         self.loading = False
 
-
     def start_timer(self, filename):
         if self.loading:
-            raise Exception('File already loading!')
+            raise Exception("File already loading!")
 
-        print(f'Loading {filename}...')
+        print(f"Loading {filename}...")
         self.start_time = time.time()
         self.loading = True
-
 
     def stop_timer(self, filename):
 
         elapsed = time.time() - self.start_time
-        print(f'Done loading {filename} in {elapsed} seconds.')
+        print(f"Done loading {filename} in {elapsed} seconds.")
         self.loading = False
 
 
@@ -69,14 +57,16 @@ EpicsSignalBase.set_defaults(timeout=10, connection_timeout=10)
 #                publish_documents_with_kafka=True,
 #                pbar=True)
 
-configure_base(get_ipython().user_ns,
-                Broker.named("temp"),
-                pbar=True,
-                bec=True,
-                magics=True,
-                mpl=True,
-                epics_context=False,
-                publish_documents_with_kafka=True)
+configure_base(
+    get_ipython().user_ns,
+    Broker.named("temp"),
+    pbar=True,
+    bec=True,
+    magics=True,
+    mpl=True,
+    epics_context=False,
+    publish_documents_with_kafka=True,
+)
 
 
 event_loop = asyncio.get_event_loop()
@@ -118,13 +108,17 @@ def warmup_hdf5_plugins(detectors):
     for det in detectors:
         _array_size = det.hdf5.array_size.get()
         if 0 in [_array_size.height, _array_size.width] and hasattr(det, "hdf5"):
-            print(f"\n  Warming up HDF5 plugin for {det.name} as the array_size={_array_size}...")
+            print(
+                f"\n  Warming up HDF5 plugin for {det.name} as the array_size={_array_size}..."
+            )
             det.hdf5.warmup()
-            print(f"  Warming up HDF5 plugin for {det.name} is done. array_size={det.hdf5.array_size.get()}\n")
+            print(
+                f"  Warming up HDF5 plugin for {det.name} is done. array_size={det.hdf5.array_size.get()}\n"
+            )
         else:
-            print(f"\n  Warming up of the HDF5 plugin is not needed for {det.name} as the array_size={_array_size}.")
-
-
+            print(
+                f"\n  Warming up of the HDF5 plugin is not needed for {det.name} as the array_size={_array_size}."
+            )
 
 
 def show_env():
@@ -136,6 +130,7 @@ def show_env():
     b = a.split("\n")
     print(b[0].split("/")[-1][:-1])
 
-PROPOSAL_DIR="/nsls2/data/hex/legacy/flyscan_tests/just_kinetix"
+
+PROPOSAL_DIR = "/nsls2/data/hex/legacy/flyscan_tests/just_kinetix"
 
 file_loading_timer = FileLoadingTimer()

@@ -74,8 +74,6 @@ def instantiate_panda_async():
 panda1_async, writer = instantiate_panda_async()
 
 
-
-
 class PandATriggerState(str, Enum):
     null = "null"
     preparing = "preparing"
@@ -172,7 +170,6 @@ def now():
 
 
 jlw = JSONLWriter(f"/tmp/export-docs-{now()}.json")
-
 
 
 file_loading_timer.stop_timer(__file__)

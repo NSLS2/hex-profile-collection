@@ -32,7 +32,7 @@ from ophyd_async.core.device import DeviceCollector
 from ophyd_async.epics.areadetector.controllers.kinetix_controller import (
     KinetixController,
 )
-from ophyd_async.epics.areadetector.drivers.kinetix_driver import KinetixDriver
+from ophyd_async.epics.areadetector.drivers.kinetix_driver import KinetixDriver,KinetixReadoutMode
 from ophyd_async.epics.areadetector.writers.hdf_writer import HDFWriter
 from ophyd_async.epics.areadetector.writers.nd_file_hdf import NDFileHDF
 
@@ -90,7 +90,7 @@ class KinetixShapeProvider(ShapeProvider):
         return (3200, 3200)  # y, x
 
 
-def instantiate_panda_async():
+def instantiate_kinetix_async():
     with DeviceCollector():
         kinetix_async = KinetixDriver(KINETIX_PV_PREFIX + "cam1:")
         hdf_plugin_kinetix = NDFileHDF(
@@ -110,15 +110,16 @@ def instantiate_panda_async():
     return kinetix_async, kinetix_writer
 
 
-kinetix_async, kinetix_writer = instantiate_panda_async()
+kinetix_async, kinetix_writer = instantiate_kinetix_async()
 kinetix_controller = KinetixController(kinetix_async)
 
 # TODO: add as a new component into ophyd-async.
 kinetix_hdf_status = EpicsSignalRO("XF:27ID1-BI{Kinetix-Det:1}HDF1:WriteFile_RBV", name="kinetix_hdf_status", string=True)
 
 
+# Create Kinetix standard detector with long writer timeout to account for filewriting delay
 kinetix_standard_det = StandardDetector(
-    kinetix_controller, kinetix_writer, name="kinetix_standard_det"
+    kinetix_controller, kinetix_writer, name="kinetix_standard_det", writer_timeout=600.0
 )
 
 

@@ -19,6 +19,7 @@ class SampleTower(Device):
     """
 
     # Define a list of objects corresponding to motors of the sample tower    
+
     axis_x1 = Cpt(EpicsMotorWithDescription, "X1}Mtr")
     axis_z1 = Cpt(EpicsMotorWithDescription, "Z1}Mtr")
     pitch = Cpt(EpicsMotorWithDescription, "Rx}Mtr")
@@ -75,6 +76,12 @@ class HEXMonochromator(Device):
 
 mono = HEXMonochromator("XF:27IDA-OP:1{Mono:DCLM-Ax:", name="mono")
 sample_tower = SampleTower("XF:27IDF-OP:1{SMPL:1-Ax:", name="sample_tower")
+
+class TomoRotaryStage(Device):
+    rotary_axis = Cpt(EpicsMotorWithDescription, "Ax:4}Mtr")
+
+tomo_rotary_stage = TomoRotaryStage("XF:27IDF-OP:1{MC:5-", name="tomo_rotary_stage")
+tomo_rot_axis = tomo_rotary_stage.rotary_axis
 
 
 class MotorValuesMCA1(Device):

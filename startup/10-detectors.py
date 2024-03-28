@@ -8,6 +8,8 @@ import asyncio
 from dataclasses import dataclass
 from enum import Enum
 
+from ophyd import EpicsSignalRO
+
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     DetectorControl,
@@ -110,6 +112,10 @@ def instantiate_panda_async():
 
 kinetix_async, kinetix_writer = instantiate_panda_async()
 kinetix_controller = KinetixController(kinetix_async)
+
+# TODO: add as a new component into ophyd-async.
+kinetix_hdf_status = EpicsSignalRO("XF:27ID1-BI{Kinetix-Det:1}HDF1:WriteFile_RBV", name="kinetix_hdf_status", string=True)
+
 
 kinetix_standard_det = StandardDetector(
     kinetix_controller, kinetix_writer, name="kinetix_standard_det"

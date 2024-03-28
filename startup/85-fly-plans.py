@@ -123,6 +123,10 @@ def tomo_demo_async(num_images=1801, scan_time=20, start_deg=0, exposure_time=0.
     kinetix_val = yield from bps.rd(kinetix_writer.hdf.num_captured)
     print(f"{panda_val = }    {kinetix_val = }")
 
+    # TODO: use AsyncStatus to wait for a 'Done' writing signal
+    while (yield from bps.rd(kinetix_hdf_status)) != "Done":
+        yield from bps.sleep(1)
+
     yield from bps.unstage_all(panda_flyer, detector)
     yield from bps.unstage_all(kinetix_flyer, kinetix_standard_det)
 

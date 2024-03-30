@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from enum import Enum
 
 from ophyd import EpicsSignalRO
-
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     DetectorControl,
@@ -32,7 +31,10 @@ from ophyd_async.core.device import DeviceCollector
 from ophyd_async.epics.areadetector.controllers.kinetix_controller import (
     KinetixController,
 )
-from ophyd_async.epics.areadetector.drivers.kinetix_driver import KinetixDriver,KinetixReadoutMode
+from ophyd_async.epics.areadetector.drivers.kinetix_driver import (
+    KinetixDriver,
+    KinetixReadoutMode,
+)
 from ophyd_async.epics.areadetector.writers.hdf_writer import HDFWriter
 from ophyd_async.epics.areadetector.writers.nd_file_hdf import NDFileHDF
 
@@ -98,7 +100,8 @@ def instantiate_kinetix_async():
         )
 
     with DeviceCollector():
-        dir_prov = UUIDDirectoryProvider(PROPOSAL_DIR)
+        # dir_prov = UUIDDirectoryProvider("/nsls2/data/hex/proposals/commissioning/pass-315051/tomography/bluesky_test/kinetix")
+        dir_prov = ScanIDDirectoryProvider(PROPOSAL_DIR)
         kinetix_writer = HDFWriter(
             hdf_plugin_kinetix,
             dir_prov,
@@ -114,12 +117,19 @@ kinetix_async, kinetix_writer = instantiate_kinetix_async()
 kinetix_controller = KinetixController(kinetix_async)
 
 # TODO: add as a new component into ophyd-async.
-kinetix_hdf_status = EpicsSignalRO("XF:27ID1-BI{Kinetix-Det:1}HDF1:WriteFile_RBV", name="kinetix_hdf_status", string=True)
+kinetix_hdf_status = EpicsSignalRO(
+    "XF:27ID1-BI{Kinetix-Det:1}HDF1:WriteFile_RBV",
+    name="kinetix_hdf_status",
+    string=True,
+)
 
 
 # Create Kinetix standard detector with long writer timeout to account for filewriting delay
 kinetix_standard_det = StandardDetector(
-    kinetix_controller, kinetix_writer, name="kinetix_standard_det", writer_timeout=600.0
+    kinetix_controller,
+    kinetix_writer,
+    name="kinetix_standard_det",
+    writer_timeout=600.0,
 )
 
 
@@ -133,7 +143,7 @@ def kinetix_stage():
     yield from bps.sleep(5)
 
 
-def kinetix_fly(num=10, exposure_time=0.1, software_trigger=True):
+def kinetix_collect(num=10, exposure_time=0.1, software_trigger=True):
 
     kinetix_exp_setup = KinetixTriggerSetup(
         num_images=num, exposure_time=exposure_time, software_trigger=software_trigger
@@ -143,16 +153,13 @@ def kinetix_fly(num=10, exposure_time=0.1, software_trigger=True):
     yield from bps.prepare(kinetix_flyer, kinetix_exp_setup, wait=True)
     yield from bps.prepare(kinetix_standard_det, kinetix_flyer.trigger_info, wait=True)
 
-    detector = kinetix_standard_det
-    # detector.controller.disarm.assert_called_once  # type: ignore
-
     yield from bps.open_run()
 
     yield from bps.kickoff(kinetix_flyer)
-    yield from bps.kickoff(detector)
+    yield from bps.kickoff(kinetix_standard_det)
 
     yield from bps.complete(kinetix_flyer, wait=True, group="complete")
-    yield from bps.complete(detector, wait=True, group="complete")
+    yield from bps.complete(kinetix_standard_det, wait=True, group="complete")
 
     # Manually incremenet the index as if a frame was taken
     # detector.writer.index += 1
@@ -169,7 +176,7 @@ def kinetix_fly(num=10, exposure_time=0.1, software_trigger=True):
             kinetix_standard_det,
             stream=True,
             return_payload=False,
-            name="main_stream",
+            name=f"{kinetix_standard_det.name}_stream",
         )
         yield from bps.sleep(0.01)
 

@@ -115,3 +115,17 @@ theta = edxd.axis_rx
 
 # sd (SuppelementalData) is an attribute of RE, defined in the nslsii.__init__().
 sd.baseline += [getattr(mca1_motors, m) for m in mca1_motors.component_names]
+
+
+fe_shutter_status = EpicsSignalRO(
+    "XF:27IDA-PPS{Sh:FE}Sts:OpnCmd-Sts", name="fe_shutter_status", string=False
+)
+from nslsii.devices import TwoButtonShutter
+
+
+class HEXTwoButtonShutter(TwoButtonShutter):
+    def stop(self, *, success=False):
+        pass
+
+
+ph_shutter = HEXTwoButtonShutter("XF:27IDA-PPS{L1-S1}", name="ph_shutter")

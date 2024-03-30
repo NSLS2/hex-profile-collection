@@ -21,7 +21,7 @@ from bluesky.run_engine import RunEngine, call_in_bluesky_event_loop
 from bluesky.utils import PersistentDict
 from databroker.v0 import Broker
 from IPython import get_ipython
-from nslsii import configure_base
+from nslsii import configure_base, configure_kafka_publisher
 from ophyd.signal import EpicsSignalBase
 from tiled.client import from_uri
 
@@ -65,7 +65,7 @@ configure_base(
     magics=True,
     mpl=True,
     epics_context=False,
-    publish_documents_with_kafka=True,
+    publish_documents_with_kafka=False,
 )
 
 
@@ -76,6 +76,8 @@ RE.subscribe(bec)
 tiled_client = from_uri("http://localhost:8000", api_key=os.getenv("TILED_API_KEY", ""))
 tw = TiledWriter(tiled_client)
 RE.subscribe(tw)
+
+configure_kafka_publisher(RE, beamline_name="hex")
 
 # This is needed for ophyd-async to enable 'await <>' instead of 'asyncio.run(<>)':
 get_ipython().run_line_magic("autoawait", "call_in_bluesky_event_loop")
@@ -131,6 +133,9 @@ def show_env():
     print(b[0].split("/")[-1][:-1])
 
 
-PROPOSAL_DIR = "/nsls2/data/hex/legacy/flyscan_tests/just_kinetix"
+CYCLE = "2024-1"  # or "commissioning" - to be extracted from NSLS2 API eventually.
+PROPOSAL_ID = "pass-313941"  # update for the current user.
+
+PROPOSAL_DIR = f"/nsls2/data/hex/proposals/{CYCLE}/{PROPOSAL_ID}/tomography/raw_data/"
 
 file_loading_timer = FileLoadingTimer()

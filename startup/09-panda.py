@@ -4,6 +4,7 @@ import asyncio
 import datetime
 import json
 import time as ttime
+import uuid
 from enum import Enum
 from pathlib import Path
 from threading import Thread
@@ -21,6 +22,7 @@ from ophyd_async.core import (
     DetectorControl,
     DetectorTrigger,
     DetectorWriter,
+    DirectoryInfo,
     HardwareTriggeredFlyable,
     SignalRW,
     SimSignalBackend,
@@ -54,12 +56,22 @@ class HEXPandaHDFWriter(PandaHDFWriter):
         return desc
 
 
+class ScanIDDirectoryProvider(UUIDDirectoryProvider):
+    def __call__(self):
+        return DirectoryInfo(
+            root=Path(self._directory_path),
+            resource_dir=Path(f"scan_{RE.md['scan_id'] + 1:05d}"),
+            prefix=str(uuid.uuid4()),
+        )
+
+
 def instantiate_panda_async():
     with DeviceCollector():
         panda1_async = PandA("XF:27ID1-ES{PANDA:1}:", name="panda1_async")
 
     with DeviceCollector():
-        dir_prov = UUIDDirectoryProvider(PROPOSAL_DIR)
+        # dir_prov = UUIDDirectoryProvider("/nsls2/data/hex/proposals/commissioning/pass-315051/tomography/bluesky_test/panda")
+        dir_prov = ScanIDDirectoryProvider(PROPOSAL_DIR)
         writer = HEXPandaHDFWriter(
             "XF:27ID1-ES{PANDA:1}",
             dir_prov,

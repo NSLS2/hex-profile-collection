@@ -24,6 +24,7 @@ $ systemctl status tiled
 ## Prefect configuration
 
 - https://github.com/NSLS-II-HEX/workflows/tree/export-nxs and https://github.com/NSLS-II-HEX/workflows/pull/4
+- conda environment: `/nsls2/users/workflow-hex/conda_envs/dev`
 
 
 ## PandA IOC

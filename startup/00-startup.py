@@ -132,10 +132,4 @@ def show_env():
     b = a.split("\n")
     print(b[0].split("/")[-1][:-1])
 
-
-CYCLE = "2024-1"  # or "commissioning" - to be extracted from NSLS2 API eventually.
-PROPOSAL_ID = "pass-313941"  # update for the current user.
-
-PROPOSAL_DIR = f"/nsls2/data/hex/proposals/{CYCLE}/{PROPOSAL_ID}/tomography/raw_data/"
-
 file_loading_timer = FileLoadingTimer()

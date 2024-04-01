@@ -132,4 +132,5 @@ def show_env():
     b = a.split("\n")
     print(b[0].split("/")[-1][:-1])
 
+
 file_loading_timer = FileLoadingTimer()

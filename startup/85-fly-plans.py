@@ -23,25 +23,74 @@ def close_shutter():
 
 
 @bpp.finalize_decorator(close_shutter)
-def take_dark_flat(exposure_time, offset, dark_images=20, flat_images=50):
-    if (yield from bps.rd(fe_shutter_status)) != 1:
-        raise RuntimeError(f"Front-end shutter is closed. Reopen it!")
+def take_dark_flat(
+    exposure_time, offset, dark_images=20, flat_images=50, use_shutter=True
+):
+
+    if use_shutter:
+        if (yield from bps.rd(fe_shutter_status)) != 1:
+            raise RuntimeError(f"Front-end shutter is closed. Reopen it!")
+
+    yield from bps.open_run()
+
+    #### DARKS ####
 
     # Collect dark frames:
-    yield from bps.mv(ph_shutter, "Close")
-    yield from kinetix_collect(num=dark_images, exposure_time=exposure_time)
+    if use_shutter:
+        yield from bps.mv(ph_shutter, "Close")
+
+    kinetix_writer._directory_provider._frame_type = FrameType.dark
+
+    yield from bps.stage_all(kinetix_standard_det, kinetix_flyer)
+
+    yield from bps.prepare(
+        kinetix_flyer,
+        KinetixTriggerSetup(
+            num_images=dark_images,
+            exposure_time=exposure_time,
+            software_trigger=True,
+        ),
+        wait=True,
+    )
+    yield from bps.prepare(kinetix_standard_det, kinetix_flyer.trigger_info, wait=True)
+
+    yield from inner_kinetix_collect()
+
+    yield from bps.unstage_all(kinetix_flyer, kinetix_standard_det)
+
+    #### FLATS ####
 
     # Move sample out of the way:
     yield from bps.movr(sample_tower.axis_x1, offset)
 
     # Collect flat images:
-    yield from bps.mv(ph_shutter, "Open")
+    if use_shutter:
+        yield from bps.mv(ph_shutter, "Open")
     yield from bps.sleep(2)
-    uid_flat = yield from kinetix_collect(num=flat_images, exposure_time=exposure_time)
+
+    kinetix_writer._directory_provider._frame_type = FrameType.flat
+
+    yield from bps.stage_all(kinetix_standard_det, kinetix_flyer)
+
+    yield from bps.prepare(
+        kinetix_flyer,
+        KinetixTriggerSetup(
+            num_images=flat_images,
+            exposure_time=exposure_time,
+            software_trigger=True,
+        ),
+        wait=True,
+    )
+    yield from bps.prepare(kinetix_standard_det, kinetix_flyer.trigger_info, wait=True)
+
+    yield from inner_kinetix_collect()
+
+    yield from bps.unstage_all(kinetix_flyer, kinetix_standard_det)
+
+    yield from bps.close_run()
 
     # Move sample back:
     yield from bps.movr(sample_tower.axis_x1, -offset)
-    # yield from bps.mv(ph_shutter, "Close")
 
 
 @bpp.finalize_decorator(close_shutter)
@@ -146,6 +195,10 @@ def tomo_flyscan(
     yield from bps.mv(panda1_pcomp_1.step, step_width_counts)
     yield from bps.mv(panda1_pcomp_1.pulses, num_images)
 
+    yield from bps.open_run()
+
+    kinetix_writer._directory_provider._frame_type = FrameType.scan
+
     # Stage All!
     yield from bps.stage_all(*detectors)
 
@@ -162,8 +215,6 @@ def tomo_flyscan(
 
     # Move rotation axis to the stop position + the lead angle:
     yield from bps.mv(tomo_rot_axis, stop_deg + lead_angle)
-
-    yield from bps.open_run()
 
     for flyer_or_det in detectors:
         yield from bps.kickoff(flyer_or_det)

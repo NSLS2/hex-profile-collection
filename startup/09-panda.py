@@ -56,12 +56,29 @@ class HEXPandaHDFWriter(PandaHDFWriter):
         return desc
 
 
+class FrameType(Enum):
+    dark = "dark"
+    flat = "flat"
+    scan = "scan"
+
+
 class ScanIDDirectoryProvider(UUIDDirectoryProvider):
+    def __init__(self, *args, frame_type: FrameType = FrameType.scan, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._frame_type = frame_type
+
     def __call__(self):
+        resource_dir = Path(f"scan_{RE.md['scan_id']:05d}_dark_flat")
+        prefix = f"{self._frame_type.value}_{uuid.uuid4()}"
+
+        if self._frame_type == FrameType.scan:
+            resource_dir = Path(f"scan_{RE.md['scan_id']:05d}")
+            prefix = f"{uuid.uuid4()}"
+
         return DirectoryInfo(
             root=Path(self._directory_path),
-            resource_dir=Path(f"scan_{RE.md['scan_id'] + 1:05d}"),
-            prefix=str(uuid.uuid4()),
+            resource_dir=resource_dir,
+            prefix=prefix,
         )
 
 

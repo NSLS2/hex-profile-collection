@@ -116,6 +116,13 @@ def instantiate_kinetix_async():
 kinetix_async, kinetix_writer = instantiate_kinetix_async()
 kinetix_controller = KinetixController(kinetix_async)
 
+kinetix_exposure_time = EpicsSignalRO(
+    "XF:27ID1-BI{Kinetix-Det:1}cam1:AcquireTime_RBV", name="kinetix_exposure_time"
+)
+sd.baseline.append(kinetix_exposure_time)
+RE.preprocessors.append(sd)
+
+
 # TODO: add as a new component into ophyd-async.
 kinetix_hdf_status = EpicsSignalRO(
     "XF:27ID1-BI{Kinetix-Det:1}HDF1:WriteFile_RBV",
@@ -143,17 +150,7 @@ def kinetix_stage():
     yield from bps.sleep(5)
 
 
-def kinetix_collect(num=10, exposure_time=0.1, software_trigger=True):
-
-    kinetix_exp_setup = KinetixTriggerSetup(
-        num_images=num, exposure_time=exposure_time, software_trigger=software_trigger
-    )
-
-    yield from bps.stage_all(kinetix_standard_det, kinetix_flyer)
-    yield from bps.prepare(kinetix_flyer, kinetix_exp_setup, wait=True)
-    yield from bps.prepare(kinetix_standard_det, kinetix_flyer.trigger_info, wait=True)
-
-    yield from bps.open_run()
+def inner_kinetix_collect():
 
     yield from bps.kickoff(kinetix_flyer)
     yield from bps.kickoff(kinetix_standard_det)
@@ -183,9 +180,46 @@ def kinetix_collect(num=10, exposure_time=0.1, software_trigger=True):
     yield from bps.wait(group="complete")
     val = yield from bps.rd(kinetix_writer.hdf.num_captured)
     print(f"{val = }")
-    yield from bps.close_run()
+
+
+def kinetix_collect(num=10, exposure_time=0.1, software_trigger=True):
+
+    kinetix_exp_setup = KinetixTriggerSetup(
+        num_images=num, exposure_time=exposure_time, software_trigger=software_trigger
+    )
+
+    yield from bps.open_run()
+
+    yield from bps.stage_all(kinetix_standard_det, kinetix_flyer)
+
+    yield from bps.prepare(kinetix_flyer, kinetix_exp_setup, wait=True)
+    yield from bps.prepare(kinetix_standard_det, kinetix_flyer.trigger_info, wait=True)
+
+    yield from inner_kinetix_collect()
 
     yield from bps.unstage_all(kinetix_flyer, kinetix_standard_det)
+
+    yield from bps.close_run()
+
+
+def _kinetix_collect_dark_flat(num=10, exposure_time=0.1, software_trigger=True):
+
+    kinetix_exp_setup = KinetixTriggerSetup(
+        num_images=num, exposure_time=exposure_time, software_trigger=software_trigger
+    )
+
+    yield from bps.open_run()
+
+    yield from bps.stage_all(kinetix_standard_det, kinetix_flyer)
+
+    yield from bps.prepare(kinetix_flyer, kinetix_exp_setup, wait=True)
+    yield from bps.prepare(kinetix_standard_det, kinetix_flyer.trigger_info, wait=True)
+
+    yield from inner_kinetix_collect()
+
+    yield from bps.unstage_all(kinetix_flyer, kinetix_standard_det)
+
+    yield from bps.close_run()
 
 
 file_loading_timer.stop_timer(__file__)

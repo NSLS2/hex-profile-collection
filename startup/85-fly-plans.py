@@ -164,10 +164,10 @@ def tomo_flyscan(
                 f"Your configured exposure time is longer than the time per step {step_time} seconds!"
             )
 
-    #step_width_counts = COUNTS_PER_REVOLUTION / (
+    # step_width_counts = COUNTS_PER_REVOLUTION / (
     #    (DEG_PER_REVOLUTION / (stop_deg - start_deg)) * (num_images - 1)
-    #)
-    #if int(step_width_counts) != round(step_width_counts, 5):
+    # )
+    # if int(step_width_counts) != round(step_width_counts, 5):
     #    raise ValueError(
     #        "The number of encoder counts per pulse is not an integer value!"
     #    )
@@ -190,10 +190,10 @@ def tomo_flyscan(
 
     # Uncomment if using gate trigger mode on camera
     yield from bps.mv(
-       panda1_pcomp_1.width, 3 #step_width_counts - 1
+        panda1_pcomp_1.width, 3  # step_width_counts - 1
     )  # Width in encoder counts that the pulse will be high
-    #yield from bps.mv(panda1_pcomp_1.step, step_width_counts)
-    #yield from bps.mv(panda1_pcomp_1.pulses, num_images)
+    # yield from bps.mv(panda1_pcomp_1.step, step_width_counts)
+    # yield from bps.mv(panda1_pcomp_1.pulses, num_images)
 
     yield from bps.open_run()
 

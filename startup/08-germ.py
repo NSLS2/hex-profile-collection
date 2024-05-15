@@ -23,6 +23,17 @@ from PIL import Image
 class HEXGeRMDetectorHDF5(GeRMDetectorHDF5):
     """HEX-specific ophyd class for GeRM detector producing HDF5 files."""
 
+    def describe(self):
+        res = super().describe()
+        res[self.image.name].update(
+            {
+                "shape": self.frame_shape.get().tolist(),
+                "dtype_str": "<f4",
+                "chunk_size": [[x] for x in self.frame_shape.get().tolist()],
+            }
+        )
+        return res
+
     def stop(self, *, success=False):
         # TODO: see why it's not called by RE on RE.stop()
         ret = super().stop(success=success)

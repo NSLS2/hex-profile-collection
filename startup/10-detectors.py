@@ -18,12 +18,8 @@ from ophyd_async.core import (
     HardwareTriggeredFlyable,
     ShapeProvider,
     SignalRW,
-    SimSignalBackend,
-    StaticDirectoryProvider,
     TriggerInfo,
     TriggerLogic,
-    UUIDDirectoryProvider,
-    set_sim_value,
 )
 from ophyd_async.core.async_status import AsyncStatus
 from ophyd_async.core.detector import StandardDetector

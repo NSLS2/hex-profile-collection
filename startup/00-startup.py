@@ -68,14 +68,48 @@ configure_base(
     publish_documents_with_kafka=False,
 )
 
-
 event_loop = asyncio.get_event_loop()
 RE = RunEngine(loop=event_loop)
 RE.subscribe(bec)
 
-tiled_client = from_uri("http://localhost:8000", api_key=os.getenv("TILED_API_KEY", ""))
-tw = TiledWriter(tiled_client)
+tiled_writing_client = from_uri(
+    "https://tiled.nsls2.bnl.gov/api/v1/metadata/hex/raw",
+    api_key=os.environ["TILED_BLUESKY_WRITING_API_KEY_HEX"],
+)
+tw = TiledWriter(tiled_writing_client)
 RE.subscribe(tw)
+
+c = tiled_reading_client = from_uri(
+    "https://tiled.nsls2.bnl.gov/api/v1/metadata/hex/raw"
+)
+
+# db = Broker(c)
+
+import json
+
+
+class JSONWriter:
+    """Writer for a JSON array"""
+
+    def __init__(self, filepath):
+        self.file = open(filepath, "w")
+        self.file.write("[\n")
+
+    def __call__(self, name, doc):
+        json.dump({"name": name, "doc": doc}, self.file)
+        if name == "stop":
+            self.file.write("\n]")
+            self.file.close()
+        else:
+            self.file.write(",\n")
+
+
+# wr = JSONWriter('/tmp/test.json')
+# RE.subscribe(wr)
+
+from pprint import pprint
+
+RE.subscribe(pprint)
 
 configure_kafka_publisher(RE, beamline_name="hex")
 

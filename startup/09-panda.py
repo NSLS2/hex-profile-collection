@@ -23,13 +23,11 @@ from ophyd_async.core import (
     DetectorTrigger,
     DetectorWriter,
     DirectoryInfo,
+    DirectoryProvider,
     HardwareTriggeredFlyable,
     SignalRW,
-    SimSignalBackend,
-    StaticDirectoryProvider,
     TriggerInfo,
     TriggerLogic,
-    UUIDDirectoryProvider,
 )
 from ophyd_async.core.async_status import AsyncStatus
 from ophyd_async.core.detector import StandardDetector
@@ -37,6 +35,21 @@ from ophyd_async.core.device import DeviceCollector
 from ophyd_async.panda.panda import PandA
 from ophyd_async.panda.panda_controller import PandaPcapController
 from ophyd_async.panda.writers import PandaHDFWriter
+
+
+# TODO: use the ophyd-async version once released.
+# https://github.com/bluesky/ophyd-async/pull/245
+class UUIDDirectoryProvider(DirectoryProvider):
+    def __init__(self, directory_path, resource_dir="."):
+        self._directory_path = directory_path
+        self._resource_dir = resource_dir
+
+    def __call__(self):
+        return DirectoryInfo(
+            root=Path(self._directory_path),
+            resource_dir=Path(self._resource_dir),
+            prefix=str(uuid.uuid4()),
+        )
 
 
 async def print_children(device):

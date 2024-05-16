@@ -29,7 +29,6 @@ class HEXGeRMDetectorHDF5(GeRMDetectorHDF5):
             {
                 "shape": self.frame_shape.get().tolist(),
                 "dtype_str": "<f4",
-                "chunk_size": [[x] for x in self.frame_shape.get().tolist()],
             }
         )
         return res

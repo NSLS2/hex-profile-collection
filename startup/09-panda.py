@@ -100,8 +100,9 @@ class ScanIDDirectoryProvider(UUIDDirectoryProvider):
             resource_dir = Path(f"scan_{RE.md['scan_id']:05d}")
             prefix = f"{uuid.uuid4()}"
 
+        proposal_assets = Path(self._directory_path, RE.md["cycle"], RE.md["proposal"], "assets")
         return DirectoryInfo(
-            root=Path(self._directory_path),
+            root=proposal_assets,
             resource_dir=resource_dir,
             prefix=prefix,
         )
@@ -112,8 +113,7 @@ def instantiate_panda_async():
         panda1_async = PandA("XF:27ID1-ES{PANDA:1}:", name="panda1_async")
 
     with DeviceCollector():
-        # dir_prov = UUIDDirectoryProvider("/nsls2/data/hex/proposals/commissioning/pass-315051/tomography/bluesky_test/panda")
-        dir_prov = ScanIDDirectoryProvider(PROPOSAL_DIR)
+        dir_prov = ScanIDDirectoryProvider("/nsls2/data/hex/proposals/")
         writer = HEXPandaHDFWriter(
             "XF:27ID1-ES{PANDA:1}",
             dir_prov,

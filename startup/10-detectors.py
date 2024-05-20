@@ -96,8 +96,7 @@ def instantiate_kinetix_async():
         )
 
     with DeviceCollector():
-        # dir_prov = UUIDDirectoryProvider("/nsls2/data/hex/proposals/commissioning/pass-315051/tomography/bluesky_test/kinetix")
-        dir_prov = ScanIDDirectoryProvider(PROPOSAL_DIR)
+        dir_prov = ScanIDDirectoryProvider("/nsls2/data/hex/proposals/")
         kinetix_writer = HDFWriter(
             hdf_plugin_kinetix,
             dir_prov,

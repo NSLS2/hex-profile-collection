@@ -16,10 +16,10 @@ import matplotlib.pyplot as plt
 from IPython.terminal.prompts import Prompts, Token
 import nslsii
 import ophyd.signal
+import redis
 from bluesky.callbacks.broker import post_run, verify_files_saved
 from bluesky.callbacks.tiled_writer import TiledWriter
 from bluesky.run_engine import RunEngine, call_in_bluesky_event_loop
-from bluesky.utils import PersistentDict
 from databroker.v0 import Broker
 from IPython import get_ipython
 from nslsii import configure_base, configure_kafka_publisher
@@ -137,8 +137,7 @@ bec.disable_table()
 
 runengine_metadata_dir = Path("/nsls2/data/hex/shared/config/runengine-metadata")
 
-# PersistentDict will create the directory if it does not exist
-RE.md = PersistentDict(runengine_metadata_dir)
+RE.md = RedisJSONDict(redis.Redis("info.hex.nsls2.bnl.gov", 6379), prefix="")
 
 
 # Optional: set any metadata that rarely changes.

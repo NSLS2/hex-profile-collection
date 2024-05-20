@@ -2,9 +2,9 @@
 
 c = get_config()
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # InteractiveShellApp configuration
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # A Mixin for applications that start InteractiveShell instances.
 #
@@ -36,7 +36,7 @@ c = get_config()
 
 # Pre-load matplotlib and numpy for interactive use, selecting a particular
 # matplotlib backend and loop integration.
-#c.InteractiveShellApp.pylab = 'auto'
+# c.InteractiveShellApp.pylab = 'auto'
 
 # Configure matplotlib for interactive use with the default matplotlib backend.
 # c.InteractiveShellApp.matplotlib = None
@@ -68,9 +68,9 @@ c.StoreMagics.autorestore = True
 # A file to be run
 # c.InteractiveShellApp.file_to_run = ''
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # TerminalIPythonApp configuration
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # TerminalIPythonApp will inherit config from: BaseIPythonApplication,
 # Application, InteractiveShellApp
@@ -91,7 +91,7 @@ c.StoreMagics.autorestore = True
 # c.TerminalIPythonApp.module_to_run = ''
 
 # The date format used by logging formatters for %(asctime)s
-c.TerminalIPythonApp.log_datefmt = '%Y-%m-%d %H:%M:%S'
+c.TerminalIPythonApp.log_datefmt = "%Y-%m-%d %H:%M:%S"
 
 # Whether to overwrite existing config files when copying
 # c.TerminalIPythonApp.overwrite = False
@@ -170,9 +170,9 @@ c.TerminalIPythonApp.log_datefmt = '%Y-%m-%d %H:%M:%S'
 # The Logging format template
 # c.TerminalIPythonApp.log_format = '[%(name)s]%(highlevel)s %(message)s'
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # TerminalInteractiveShell configuration
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # TerminalInteractiveShell will inherit config from: InteractiveShell
 
@@ -328,9 +328,9 @@ c.TerminalInteractiveShell.autocall = 2
 # Automatically call the pdb debugger after every exception.
 # c.TerminalInteractiveShell.pdb = False
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # PromptManager configuration
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # This is the primary interface for producing IPython's prompts.
 
@@ -349,9 +349,9 @@ c.TerminalInteractiveShell.autocall = 2
 #
 # c.PromptManager.color_scheme = 'Linux'
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # HistoryManager configuration
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # A class to organize all history-related functionality in one place.
 
@@ -390,9 +390,9 @@ c.TerminalInteractiveShell.autocall = 2
 # This may be necessary in some threaded environments where IPython is embedded.
 # c.HistoryManager.enabled = True
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # ProfileDir configuration
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # An object to manage the profile directory and its resources.
 #
@@ -406,9 +406,9 @@ c.TerminalInteractiveShell.autocall = 2
 # `profile` option.
 # c.ProfileDir.location = u''
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # PlainTextFormatter configuration
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # The default pretty-printer.
 #
@@ -458,9 +458,9 @@ c.TerminalInteractiveShell.autocall = 2
 #
 # c.PlainTextFormatter.singleton_printers = {}
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # IPCompleter configuration
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Extension of the completer class with IPython-specific features
 
@@ -499,9 +499,9 @@ c.TerminalInteractiveShell.autocall = 2
 # c.IPCompleter.greedy = False
 
 c.IPCompleter.use_jedi = False
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # ScriptMagics configuration
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Magics for talking to scripts
 #
@@ -523,9 +523,9 @@ c.IPCompleter.use_jedi = False
 # the right interpreter.
 # c.ScriptMagics.script_paths = {}
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # StoreMagics configuration
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Lightweight persistence for python variables.
 #

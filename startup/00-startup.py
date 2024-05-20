@@ -13,6 +13,7 @@ from pathlib import Path
 
 import epicscorelibs.path.pyepics
 import matplotlib.pyplot as plt
+from IPython.terminal.prompts import Prompts, Token
 import nslsii
 import ophyd.signal
 from bluesky.callbacks.broker import post_run, verify_files_saved
@@ -23,9 +24,25 @@ from databroker.v0 import Broker
 from IPython import get_ipython
 from nslsii import configure_base, configure_kafka_publisher
 from ophyd.signal import EpicsSignalBase
+from redis_json_dict import RedisJSONDict
 from tiled.client import from_uri
 
 plt.ion()
+
+
+class ProposalIDPrompt(Prompts):
+    def in_prompt_tokens(self, cli=None):
+        return [
+            (
+                Token.Prompt,
+                f"Proposal #{RE.md.get('proposal', {}).get('proposal_num', 'N/A')} [",
+            ),
+            (Token.PromptNum, str(self.shell.execution_count)),
+            (Token.Prompt, "]: "),
+        ]
+
+ip = get_ipython()
+ip.prompts = ProposalIDPrompt(ip)
 
 
 class FileLoadingTimer:

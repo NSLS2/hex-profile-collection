@@ -107,7 +107,7 @@ class JSONWriter:
 # wr = JSONWriter('/tmp/test.json')
 # RE.subscribe(wr)
 
-RE.subscribe(print)
+# RE.subscribe(print)
 
 configure_kafka_publisher(RE, beamline_name="hex")
 

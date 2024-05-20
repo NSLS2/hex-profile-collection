@@ -75,6 +75,18 @@ class FrameType(Enum):
     scan = "scan"
 
 
+# class ProposalNumYMDPathProvder(YMDPathProvider):
+# 
+#     def __call__(self, device_name=None):
+#         # self._directory_path is /nsls2/data/hex/proposals
+#         # This never changes.
+#         # RE.md['cycle'] -> 2024-2
+#         # RE.md['proposal'] -> 'pass-123456'
+#         proposal_assets = self._directory_path / RE.md["cycle"] / RE.md["proposal"] / "assets"
+#         path_info = super().__call__(device_name=device_name)
+#         return dataclasses.replace(root=proposal_assets)
+
+
 class ScanIDDirectoryProvider(UUIDDirectoryProvider):
     def __init__(self, *args, frame_type: FrameType = FrameType.scan, **kwargs):
         super().__init__(*args, **kwargs)

@@ -19,8 +19,19 @@ from PIL import Image
 
 # TODO: add Tiff support in Caproto IOC.
 
+
 class HEXGeRMDetectorHDF5(GeRMDetectorHDF5):
     """HEX-specific ophyd class for GeRM detector producing HDF5 files."""
+
+    def describe(self):
+        res = super().describe()
+        res[self.image.name].update(
+            {
+                "shape": self.frame_shape.get().tolist(),
+                "dtype_str": "<f4",
+            }
+        )
+        return res
 
     def stop(self, *, success=False):
         # TODO: see why it's not called by RE on RE.stop()
@@ -32,9 +43,11 @@ class HEXGeRMDetectorHDF5(GeRMDetectorHDF5):
 
 # Intialize the GeRM detector ophyd object
 # germ_detector = HEXGeRMDetectorHDF5("XF:27ID1-ES{GeRM-Det:1}", name="GeRM", root_dir="/nsls2/data/hex/assets/germ/")
-germ_detector = HEXGeRMDetectorHDF5("XF:27ID1-ES{GeRM-Det:1}", name="GeRM", root_dir="/nsls2/data/hex/proposals/commissioning/pass-315258/raw_data/")
-
-
+germ_detector = HEXGeRMDetectorHDF5(
+    "XF:27ID1-ES{GeRM-Det:1}",
+    name="GeRM",
+    root_dir="/nsls2/data/hex/proposals/commissioning/pass-315258/raw_data/",
+)
 
 
 # TODO: rework the exporter based on Tiled.
@@ -69,7 +82,7 @@ def nx_export_callback(name, doc):
                     else:
                         return type(value)
 
-                with h5py.File(nx_filepath, 'w') as h5_file:
+                with h5py.File(nx_filepath, "w") as h5_file:
                     entry_grp = h5_file.require_group("entry")
                     data_grp = entry_grp.require_group("data")
 
@@ -77,11 +90,15 @@ def nx_export_callback(name, doc):
                     for k, v in meta_dict.items():
                         meta = v
                         break
-                    current_metadata_grp = h5_file.require_group("entry/instrument/detector")  # TODO: fix the location later.
+                    current_metadata_grp = h5_file.require_group(
+                        "entry/instrument/detector"
+                    )  # TODO: fix the location later.
                     for key, value in meta.items():
                         if key not in current_metadata_grp:
                             dtype = get_dtype(value)
-                            current_metadata_grp.create_dataset(key, data=value, dtype=dtype)
+                            current_metadata_grp.create_dataset(
+                                key, data=value, dtype=dtype
+                            )
 
                     # External link
                     data_grp["data"] = h5py.ExternalLink(h5_filepath, "entry/data/data")
@@ -96,9 +113,10 @@ GERM_DETECTOR_KEYS = [
     "voltage",
 ]
 
+
 def get_detector_parameters(det=germ_detector, keys=GERM_DETECTOR_KEYS):
     group_key = f"{det.name.lower()}_detector"
-    detector_metadata = {group_key : {}}
+    detector_metadata = {group_key: {}}
     for key in keys:
         obj = getattr(det, key)
         as_string = True if obj.enum_strs else False

@@ -1,7 +1,9 @@
-import os
 import glob
+import os
+
 import numpy as np
 from PIL import Image
+
 
 def make_folder(file_path):
     file_base = os.path.dirname(file_path)
@@ -14,8 +16,7 @@ def make_folder(file_path):
 
 def make_folder_name(folder_path, name_prefix="scan", zero_prefix=5):
     scan_name_prefix = name_prefix + "_"
-    num_folder_exist = len(
-        glob.glob(folder_path + "/" + scan_name_prefix + "*"))
+    num_folder_exist = len(glob.glob(folder_path + "/" + scan_name_prefix + "*"))
     num_folder_new = num_folder_exist + 1
     name_tmp = "00000" + str(num_folder_new)
     scan_name = scan_name_prefix + name_tmp[-zero_prefix:]
@@ -32,7 +33,7 @@ def make_file_name(file_path):
         nfile = 0
         check = True
         while check:
-            name_add = '0000' + str(nfile)
+            name_add = "0000" + str(nfile)
             file_path = file_base + "_" + name_add[-4:] + file_ext
             if os.path.isfile(file_path):
                 nfile = nfile + 1
@@ -50,8 +51,9 @@ def save_image(file_path, mat, overwrite=True):
     else:
         data_type = str(mat.dtype)
         if "complex" in data_type:
-            raise ValueError("Can't save to tiff with this format: "
-                             "{}".format(data_type))
+            raise ValueError(
+                "Can't save to tiff with this format: " "{}".format(data_type)
+            )
     image = Image.fromarray(mat)
     if not overwrite:
         file_path = make_file_name(file_path)

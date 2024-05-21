@@ -35,7 +35,7 @@ class ProposalIDPrompt(Prompts):
         return [
             (
                 Token.Prompt,
-                f"Proposal #{RE.md.get('proposal', {}).get('proposal_num', 'N/A')} [",
+                f"{RE.md.get('data_session', 'N/A')} [",
             ),
             (Token.PromptNum, str(self.shell.execution_count)),
             (Token.Prompt, "]: "),

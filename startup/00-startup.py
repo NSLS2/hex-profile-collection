@@ -13,7 +13,6 @@ from pathlib import Path
 
 import epicscorelibs.path.pyepics
 import matplotlib.pyplot as plt
-from IPython.terminal.prompts import Prompts, Token
 import nslsii
 import ophyd.signal
 import redis
@@ -22,6 +21,7 @@ from bluesky.callbacks.tiled_writer import TiledWriter
 from bluesky.run_engine import RunEngine, call_in_bluesky_event_loop
 from databroker.v0 import Broker
 from IPython import get_ipython
+from IPython.terminal.prompts import Prompts, Token
 from nslsii import configure_base, configure_kafka_publisher
 from ophyd.signal import EpicsSignalBase
 from redis_json_dict import RedisJSONDict
@@ -40,6 +40,7 @@ class ProposalIDPrompt(Prompts):
             (Token.PromptNum, str(self.shell.execution_count)),
             (Token.Prompt, "]: "),
         ]
+
 
 ip = get_ipython()
 ip.prompts = ProposalIDPrompt(ip)
@@ -119,6 +120,13 @@ class JSONWriter:
             self.file.close()
         else:
             self.file.write(",\n")
+
+
+def now():
+    return datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
+jlw = JSONWriter(f"/tmp/export-docs-{now()}.json")
 
 
 # wr = JSONWriter('/tmp/test.json')

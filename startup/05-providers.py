@@ -47,6 +47,7 @@ class ProposalNumYMDPathProvder(YMDPathProvider):
         if isinstance(self._filename_provider, ScanIDFilenameProvider):
             filename = self._filename_provider(device_name=device_name)
 
+        print(f"{path_info = }:\n  {proposal_assets = }\n  {filename = }")
         return dataclasses.replace(path_info, root=proposal_assets, filename=filename)
 
 

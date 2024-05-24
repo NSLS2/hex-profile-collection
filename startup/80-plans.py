@@ -1,9 +1,9 @@
 def example_plan(motor, list_of_positions):
 
-    for pos in list_of_positions:
-        yield from mv(motor, pos)
-        yield from count([germanium_detector])
-
+#    for pos in list_of_positions:
+#        yield from mv(motor, pos)
+#        yield from count([germanium_detector])
+    yield from bp.list_scan([germ_detector], motor, list_of_positions)
 
 def example_plan_2():
     yield from example_plan()
@@ -53,10 +53,10 @@ def sweep_motion(detector, count_time, motor, start, stop, max_moves=1000, md=No
         md = {}
     if "calibrant" not in md:
         raise KeyError("Please specify calibrant as a string")
-    if "export_dir" not in md:
-        md["export_dir"] = (
-            "/nsls2/data/hex/proposals/commissioning/pass-315258/exported_data"
-        )
+    # if "export_dir" not in md:
+    #     md["export_dir"] = (
+    #         "/nsls2/data/hex/proposals/commissioning/pass-315258/exported_data"
+    #     )
     init_pos = yield from bps.rd(motor)
     print(f"{init_pos = }")
     yield from bps.mv(motor, start)

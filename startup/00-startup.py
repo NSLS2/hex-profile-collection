@@ -114,7 +114,7 @@ class JSONWriter:
         self.file.write("[\n")
 
     def __call__(self, name, doc):
-        json.dump({"name": name, "doc": doc}, self.file)
+        json.dump({"name": name, "doc": doc}, self.file, default=str)
         if name == "stop":
             self.file.write("\n]")
             self.file.close()

@@ -16,19 +16,20 @@ file_loading_timer.start_timer(__file__)
 #         )
 
 import dataclasses
+from datetime import date
 import uuid
 
-from ophyd_async.core._providers import UUIDFilenameProvider, YMDPathProvider
+from ophyd_async.core import UUIDFilenameProvider, YMDPathProvider, PathInfo
 
 
-class ProposalNumYMDPathProvder(YMDPathProvider):
+class ProposalNumYMDPathProvider(YMDPathProvider):
 
     def __init__(
-        self, filename_provider, use_default=False, root=HEX_PROPOSAL_DIR_ROOT, **kwargs
+        self, filename_provider, use_default=False, **kwargs
     ):
 
         self._use_default = use_default
-        super().__init__(filename_provider, root, **kwargs)
+        super().__init__(filename_provider, HEX_PROPOSAL_DIR_ROOT, **kwargs)
 
     def __call__(self, device_name=None):
         # self._directory_path is /nsls2/data/hex/proposals
@@ -36,19 +37,29 @@ class ProposalNumYMDPathProvder(YMDPathProvider):
         # RE.md['cycle'] -> 2024-2
         # RE.md['proposal'] -> 'pass-123456'
         proposal_assets = (
-            self._directory_path / RE.md["cycle"] / RE.md["data_session"] / "assets"
+            self._base_directory_path / RE.md["cycle"] / RE.md["data_session"] / "assets"
         )
-        if not self._use_default:
-            path_info = super().__call__(device_name=device_name)
+        sep = os.path.sep
+        current_date = date.today().strftime(f"%Y{sep}%m{sep}%d")
+        if device_name is None:
+            ymd_dir_path = current_date
+        elif self._device_name_as_base_dir:
+            ymd_dir_path = os.path.join(
+                current_date,
+                device_name,
+            )
         else:
-            path_info = super().__call__(device_name="default")
+            ymd_dir_path = os.path.join(
+                device_name,
+                current_date,
+            )
 
-        filename = path_info.filename
-        if isinstance(self._filename_provider, ScanIDFilenameProvider):
-            filename = self._filename_provider(device_name=device_name)
+        final_dir_path = proposal_assets / ymd_dir_path
 
-        print(f"{path_info = }:\n  {proposal_assets = }\n  {filename = }")
-        return dataclasses.replace(path_info, root=proposal_assets, filename=filename)
+
+        filename = self._filename_provider(device_name=device_name)
+
+        return PathInfo(directory_path=final_dir_path, filename=filename, create_dir_depth=-4)
 
 
 # class ScanIDDirectoryProvider(UUIDDirectoryProvider):

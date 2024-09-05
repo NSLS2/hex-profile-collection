@@ -15,17 +15,12 @@ from ophyd_async.core import (
     DetectorTrigger,
     DetectorWriter,
     DeviceCollector,
-    HardwareTriggeredFlyable,
-    ShapeProvider,
     SignalRW,
     TriggerInfo,
     TriggerLogic,
 )
-from ophyd_async.core.async_status import AsyncStatus
-from ophyd_async.core.detector import StandardDetector
-from ophyd_async.core.device import DeviceCollector
-from ophyd_async.epics.areadetector.drivers.kinetix_driver import KinetixReadoutMode
-from ophyd_async.epics.areadetector.kinetix import KinetixDetector
+from ophyd_async.core import DeviceCollector
+from ophyd_async.epics.adkinetix import KinetixDetector
 
 kinetix_trigger_logic = StandardTriggerLogic()
 
@@ -34,13 +29,12 @@ def connect_to_kinetix(kinetix_id):
 
     print(f"Connecting to kinetix {kinetix_id}...")
     with DeviceCollector():
-        kinetix_path_provider = ProposalNumYMDPathProvder(default_filename_provider)
+        kinetix_path_provider = ProposalNumYMDPathProvider(default_filename_provider)
         kinetix = KinetixDetector(
             f"XF:27ID1-BI{{Kinetix-Det:{kinetix_id}}}",
             kinetix_path_provider,
             name=f"kinetix-det{kinetix_id}",
         )
-        print_children(kinetix)
 
     print("Done.")
 
@@ -48,7 +42,7 @@ def connect_to_kinetix(kinetix_id):
 
 
 kinetix1 = connect_to_kinetix(1)
-
+kinetix3 = connect_to_kinetix(3)
 sd.baseline.append(kinetix1.drv.acquire_time)
 RE.preprocessors.append(sd)
 
@@ -61,7 +55,7 @@ RE.preprocessors.append(sd)
 # )
 
 
-kinetix_flyer = HardwareTriggeredFlyable(
+kinetix_flyer = StandardFlyer(
     kinetix_trigger_logic, [], name="kinetix_flyer"
 )
 
@@ -106,7 +100,7 @@ def inner_kinetix_collect(kinetix_detector):
 def kinetix_collect(kinetix_detector, num=10, exposure_time=0.1, software_trigger=True):
 
     kinetix_exp_setup = StandardTriggerSetup(
-        num_images=num, exposure_time=exposure_time, software_trigger=software_trigger
+        num_frames=num, exposure_time=exposure_time, software_trigger=software_trigger
     )
 
     yield from bps.open_run()
@@ -128,7 +122,7 @@ def _kinetix_collect_dark_flat(
 ):
 
     kinetix_exp_setup = StandardTriggerSetup(
-        num_images=num, exposure_time=exposure_time, software_trigger=software_trigger
+        num_frames=num, exposure_time=exposure_time, software_trigger=software_trigger
     )
 
     yield from bps.open_run()

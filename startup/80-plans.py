@@ -1,3 +1,6 @@
+file_loading_timer.start_timer(__file__)
+
+
 def example_plan(motor, list_of_positions):
 
 #    for pos in list_of_positions:
@@ -9,13 +12,17 @@ def example_plan_2():
     yield from example_plan()
 
 
-def acquire_germ_detector(count_time, detector=germ_detector, num=1):
+def acquire_germ_detector(count_time, detector=None, num=1):
+    if detector is None:
+        detector = germ_detector
     yield from bps.mv(detector.count_time, count_time)
     uid = yield from bp.count([detector], num=num)
     return uid
 
 
-def count_germ(count_time, num=1, detector=germ_detector):
+def count_germ(count_time, num=1, detector=None):
+    if detector is None:
+        detector = germ_detector
     yield from bps.mv(detector.count_time, count_time)
     uid = yield from bp.count([detector], num=num)
     return uid
@@ -113,3 +120,5 @@ def sweep_motion(detector, count_time, motor, start, stop, max_moves=1000, md=No
         yield from bps.mv(motor, init_pos)
 
     return (yield from bpp.finalize_wrapper(inner(), final_plan()))
+
+file_loading_timer.stop_timer(__file__)

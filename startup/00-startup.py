@@ -7,7 +7,7 @@ import datetime
 import logging
 import os
 import subprocess
-import time
+import time as ttime
 import warnings
 from pathlib import Path
 
@@ -57,13 +57,13 @@ class FileLoadingTimer:
             raise Exception("File already loading!")
 
         print(f"Loading {filename}...")
-        self.start_time = time.time()
+        self.start_time = ttime.time()
         self.loading = True
 
     def stop_timer(self, filename):
 
-        elapsed = time.time() - self.start_time
-        print(f"Done loading {filename} in {elapsed} seconds.")
+        elapsed = ttime.time() - self.start_time
+        print(f"Done loading {filename} in {elapsed:.6f} seconds.")
         self.loading = False
 
 
@@ -98,7 +98,8 @@ tw = TiledWriter(tiled_writing_client)
 RE.subscribe(tw)
 
 c = tiled_reading_client = from_uri(
-    "https://tiled.nsls2.bnl.gov/api/v1/metadata/hex/raw"
+    "https://tiled.nsls2.bnl.gov/api/v1/metadata/hex/raw",
+    include_data_sources=True,
 )
 
 # db = Broker(c)
@@ -188,5 +189,16 @@ def show_env():
     b = a.split("\n")
     print(b[0].split("/")[-1][:-1])
 
+from ophyd_async.core import config_ophyd_async_logging
+config_ophyd_async_logging()
+
+def print_docs(name, doc):
+    print("============================")
+    print(f"{name = }")
+    print(f"{doc = }")
+    print("============================")
+
+
+RE.subscribe(print_docs)
 
 file_loading_timer = FileLoadingTimer()

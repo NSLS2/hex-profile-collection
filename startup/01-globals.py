@@ -12,15 +12,14 @@ from ophyd_async.core import (
     DetectorTrigger,
     DetectorWriter,
     DeviceCollector,
-    HardwareTriggeredFlyable,
-    ShapeProvider,
+    StandardFlyer,
     SignalRW,
     TriggerInfo,
     TriggerLogic,
 )
-from ophyd_async.core.async_status import AsyncStatus
-from ophyd_async.core.detector import StandardDetector
-from ophyd_async.core.device import DeviceCollector
+from ophyd_async.core import AsyncStatus
+from ophyd_async.core import StandardDetector
+from ophyd_async.core import DeviceCollector
 
 HEX_PROPOSAL_DIR_ROOT = "/nsls2/data/hex/proposals"
 
@@ -64,10 +63,11 @@ class StandardTriggerLogic(TriggerLogic[int]):
             exposure = setup.exposure_time
             num_images = setup.num_frames
         return TriggerInfo(
-            num=num_images,
+            number=num_images,
             trigger=trigger,
             deadtime=0.1,
             livetime=exposure,
+            multiplier=1,
         )
 
     async def prepare(self, value: int):

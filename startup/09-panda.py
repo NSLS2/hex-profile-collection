@@ -22,15 +22,14 @@ from ophyd_async.core import (
     DetectorControl,
     DetectorTrigger,
     DetectorWriter,
-    HardwareTriggeredFlyable,
     SignalRW,
     TriggerInfo,
     TriggerLogic,
 )
-from ophyd_async.core.async_status import AsyncStatus
-from ophyd_async.core.detector import StandardDetector
-from ophyd_async.core.device import DeviceCollector
-from ophyd_async.panda import HDFPanda
+from ophyd_async.core import AsyncStatus
+from ophyd_async.core import StandardDetector
+from ophyd_async.core import DeviceCollector
+from ophyd_async.fastcs.panda import HDFPanda
 
 # class HEXPandaHDFWriter(PandaHDFWriter):
 #     async def open(self, *args, **kwargs):
@@ -45,20 +44,19 @@ from ophyd_async.panda import HDFPanda
 
 
 panda_trigger_logic = StandardTriggerLogic(trigger_mode=DetectorTrigger.constant_gate)
-panda_flyer = HardwareTriggeredFlyable(panda_trigger_logic, [], name="panda_flyer")
+panda_flyer = StandardFlyer(panda_trigger_logic, [], name="panda_flyer")
 
 
 def connect_to_panda(panda_id):
 
     print(f"Connecting to Panda {panda_id}...")
     with DeviceCollector():
-        panda_path_provider = ProposalNumYMDPathProvder(default_filename_provider)
+        panda_path_provider = ProposalNumYMDPathProvider(default_filename_provider)
         panda = HDFPanda(
             f"XF:27ID1-ES{{PANDA:{panda_id}}}:",
             panda_path_provider,
             name=f"panda{panda_id}",
         )
-        # print_children(panda)
 
     print("Done.")
 

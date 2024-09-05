@@ -6,6 +6,8 @@ DEG_PER_REVOLUTION = 360
 COUNTS_PER_DEG = COUNTS_PER_REVOLUTION / DEG_PER_REVOLUTION
 ZERO_OFFSET = 39660
 
+from ophyd_async.epics.adkinetix._kinetix_io import KinetixReadoutMode
+
 DETECTOR_MAX_FRAMERATES = {
     KinetixReadoutMode.sensitivity: 80,
     KinetixReadoutMode.speed: 250,
@@ -26,11 +28,14 @@ def close_shutter():
 def take_dark_flat(
     exposure_time,
     offset,
-    detector=kinetix1,
+    detector=None,
     dark_images=20,
     flat_images=50,
     use_shutter=True,
 ):
+
+    if detector is None:
+        detector = kinetix1
 
     if use_shutter:
         if (yield from bps.rd(fe_shutter_status)) != 1:
@@ -106,8 +111,8 @@ def take_dark_flat(
 def tomo_flyscan(
     exposure_time,
     num_images,
-    panda=panda1,
-    detector=kinetix1,
+    panda=None,
+    detector=None,
     scan_time=30,
     start_deg=0,
     stop_deg=180,
@@ -137,6 +142,12 @@ def tomo_flyscan(
         whether to use/check the shutter during the scan
     """
 
+    if panda is None:
+        panda = panda1
+
+    if detector is None:
+        detector = kinetix1
+
     if use_shutter:
         if (yield from bps.rd(fe_shutter_status)) != 1:
             raise RuntimeError(f"\n    Front-end shutter is closed. Reopen it!\n")
@@ -165,7 +176,7 @@ def tomo_flyscan(
 
     framerate = 1 / step_time
 
-    det_readout_mode = yield from bps.rd(detector.drv.mode)
+    det_readout_mode = yield from bps.rd(detector.drv.readout_port_idx)
     if framerate > DETECTOR_MAX_FRAMERATES[det_readout_mode]:
         step_time = 1 / DETECTOR_MAX_FRAMERATES[det_readout_mode]
 
@@ -204,7 +215,7 @@ def tomo_flyscan(
         panda_pcomp.width, 3  # step_width_counts - 1
     )  # Width in encoder counts that the pulse will be high
     # yield from bps.mv(panda1_pcomp_1.step, step_width_counts)
-    # yield from bps.mv(panda1_pcomp_1.pulses, num_images)
+    yield from bps.mv(panda_pcomp.pulses, num_images)
 
     yield from bps.open_run()
 

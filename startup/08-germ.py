@@ -27,23 +27,15 @@ class HEXGeRMDetectorHDF5(GeRMDetectorHDF5):
         self._root_dir = str(
             Path(
                 "/nsls2/data/hex/proposals",
-                RE.md["cycle"],
-                RE.md["data_session"],
+                # RE.md["cycle"],
+                "commissioning",
+                # RE.md["data_session"],
+                "pass-314022",
                 "assets",
                 "default",
             )
         )
         return super().stage()
-
-    def describe(self):
-        res = super().describe()
-        res[self.image.name].update(
-            {
-                "shape": self.frame_shape.get().tolist(),
-                "dtype_str": "<f4",
-            }
-        )
-        return res
 
     def stop(self, *, success=False):
         # TODO: see why it's not called by RE on RE.stop()
@@ -60,7 +52,7 @@ germ_detector = HEXGeRMDetectorHDF5(
     name="GeRM",
     root_dir="PLACEHOLDER",
 )
-
+germ_detector.frame_shape.kind = Kind.omitted
 
 # TODO: rework the exporter based on Tiled.
 # TODO 2: add motor positions.
@@ -126,7 +118,9 @@ GERM_DETECTOR_KEYS = [
 ]
 
 
-def get_detector_parameters(det=germ_detector, keys=GERM_DETECTOR_KEYS):
+def get_detector_parameters(det=None, keys=GERM_DETECTOR_KEYS):
+    if det is None:
+        det = germ_detector
     group_key = f"{det.name.lower()}_detector"
     detector_metadata = {group_key: {}}
     for key in keys:

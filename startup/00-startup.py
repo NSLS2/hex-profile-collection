@@ -86,8 +86,9 @@ configure_base(
     publish_documents_with_kafka=False,
 )
 
-event_loop = asyncio.get_event_loop()
-RE = RunEngine(loop=event_loop)
+# event_loop = asyncio.get_event_loop()
+# RE = RunEngine(loop=event_loop)
+RE = RunEngine()
 RE.subscribe(bec)
 
 tiled_writing_client = from_uri(

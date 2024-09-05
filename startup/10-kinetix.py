@@ -84,6 +84,10 @@ def inner_kinetix_collect(kinetix_detector):
             pass
         else:
             done = True
+
+        detector_stream_name = f"{kinetix_detector.name}_stream"
+        yield from bps.declare_stream(kinetix_detector, name=detector_stream_name)
+
         yield from bps.collect(
             kinetix_detector,
             # stream=True,
@@ -93,7 +97,7 @@ def inner_kinetix_collect(kinetix_detector):
         yield from bps.sleep(0.01)
 
     yield from bps.wait(group="complete")
-    val = yield from bps.rd(kinetix_writer.hdf.num_captured)
+    val = yield from bps.rd(kinetix_detector._writer.hdf.num_captured)
     print(f"{val = }")
 
 
@@ -108,9 +112,9 @@ def kinetix_collect(kinetix_detector, num=10, exposure_time=0.1, software_trigge
     yield from bps.stage_all(kinetix_detector, kinetix_flyer)
 
     yield from bps.prepare(kinetix_flyer, kinetix_exp_setup, wait=True)
-    yield from bps.prepare(kinetix_detector, kinetix_flyer.trigger_info, wait=True)
+    yield from bps.prepare(kinetix_detector, kinetix_flyer.trigger_logic.trigger_info(kinetix_exp_setup), wait=True)
 
-    yield from inner_kinetix_collect()
+    yield from inner_kinetix_collect(kinetix_detector)
 
     yield from bps.unstage_all(kinetix_flyer, kinetix_detector)
 
@@ -130,9 +134,9 @@ def _kinetix_collect_dark_flat(
     yield from bps.stage_all(kinetix_detector, kinetix_flyer)
 
     yield from bps.prepare(kinetix_flyer, kinetix_exp_setup, wait=True)
-    yield from bps.prepare(kinetix_detector, kinetix_flyer.trigger_info, wait=True)
+    yield from bps.prepare(kinetix_detector, kinetix_flyer.trigger_logic.trigger_info(kinetix_exp_setup), wait=True)
 
-    yield from inner_kinetix_collect()
+    yield from inner_kinetix_collect(kinetix_detector)
 
     yield from bps.unstage_all(kinetix_flyer, kinetix_detector)
 

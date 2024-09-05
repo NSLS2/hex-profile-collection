@@ -7,7 +7,7 @@ import datetime
 import logging
 import os
 import subprocess
-import time
+import time as ttime
 import warnings
 from pathlib import Path
 
@@ -15,17 +15,35 @@ import epicscorelibs.path.pyepics
 import matplotlib.pyplot as plt
 import nslsii
 import ophyd.signal
+import redis
 from bluesky.callbacks.broker import post_run, verify_files_saved
 from bluesky.callbacks.tiled_writer import TiledWriter
 from bluesky.run_engine import RunEngine, call_in_bluesky_event_loop
-from bluesky.utils import PersistentDict
 from databroker.v0 import Broker
 from IPython import get_ipython
+from IPython.terminal.prompts import Prompts, Token
 from nslsii import configure_base, configure_kafka_publisher
 from ophyd.signal import EpicsSignalBase
+from redis_json_dict import RedisJSONDict
 from tiled.client import from_uri
 
 plt.ion()
+
+
+class ProposalIDPrompt(Prompts):
+    def in_prompt_tokens(self, cli=None):
+        return [
+            (
+                Token.Prompt,
+                f"{RE.md.get('data_session', 'N/A')} [",
+            ),
+            (Token.PromptNum, str(self.shell.execution_count)),
+            (Token.Prompt, "]: "),
+        ]
+
+
+ip = get_ipython()
+ip.prompts = ProposalIDPrompt(ip)
 
 
 class FileLoadingTimer:
@@ -39,13 +57,13 @@ class FileLoadingTimer:
             raise Exception("File already loading!")
 
         print(f"Loading {filename}...")
-        self.start_time = time.time()
+        self.start_time = ttime.time()
         self.loading = True
 
     def stop_timer(self, filename):
 
-        elapsed = time.time() - self.start_time
-        print(f"Done loading {filename} in {elapsed} seconds.")
+        elapsed = ttime.time() - self.start_time
+        print(f"Done loading {filename} in {elapsed:.6f} seconds.")
         self.loading = False
 
 
@@ -80,7 +98,8 @@ tw = TiledWriter(tiled_writing_client)
 RE.subscribe(tw)
 
 c = tiled_reading_client = from_uri(
-    "https://tiled.nsls2.bnl.gov/api/v1/metadata/hex/raw"
+    "https://tiled.nsls2.bnl.gov/api/v1/metadata/hex/raw",
+    include_data_sources=True,
 )
 
 # db = Broker(c)
@@ -96,7 +115,7 @@ class JSONWriter:
         self.file.write("[\n")
 
     def __call__(self, name, doc):
-        json.dump({"name": name, "doc": doc}, self.file)
+        json.dump({"name": name, "doc": doc}, self.file, default=str)
         if name == "stop":
             self.file.write("\n]")
             self.file.close()
@@ -104,10 +123,17 @@ class JSONWriter:
             self.file.write(",\n")
 
 
+def now():
+    return datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
+jlw = JSONWriter(f"/tmp/export-docs-{now()}.json")
+
+
 # wr = JSONWriter('/tmp/test.json')
 # RE.subscribe(wr)
 
-RE.subscribe(print)
+# RE.subscribe(print)
 
 configure_kafka_publisher(RE, beamline_name="hex")
 
@@ -120,8 +146,7 @@ bec.disable_table()
 
 runengine_metadata_dir = Path("/nsls2/data/hex/shared/config/runengine-metadata")
 
-# PersistentDict will create the directory if it does not exist
-RE.md = PersistentDict(runengine_metadata_dir)
+RE.md = RedisJSONDict(redis.Redis("info.hex.nsls2.bnl.gov", 6379), prefix="")
 
 
 # Optional: set any metadata that rarely changes.
@@ -164,5 +189,16 @@ def show_env():
     b = a.split("\n")
     print(b[0].split("/")[-1][:-1])
 
+from ophyd_async.core import config_ophyd_async_logging
+config_ophyd_async_logging()
+
+def print_docs(name, doc):
+    print("============================")
+    print(f"{name = }")
+    print(f"{doc = }")
+    print("============================")
+
+
+RE.subscribe(print_docs)
 
 file_loading_timer = FileLoadingTimer()

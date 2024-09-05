@@ -6,7 +6,9 @@ DEG_PER_REVOLUTION = 360
 COUNTS_PER_DEG = COUNTS_PER_REVOLUTION / DEG_PER_REVOLUTION
 ZERO_OFFSET = 39660
 
-KINETIX_MAX_FRAMERATES = {
+from ophyd_async.epics.adkinetix._kinetix_io import KinetixReadoutMode
+
+DETECTOR_MAX_FRAMERATES = {
     KinetixReadoutMode.sensitivity: 80,
     KinetixReadoutMode.speed: 250,
     KinetixReadoutMode.dynamic_range: 75,
@@ -24,8 +26,16 @@ def close_shutter():
 
 @bpp.finalize_decorator(close_shutter)
 def take_dark_flat(
-    exposure_time, offset, dark_images=20, flat_images=50, use_shutter=True
+    exposure_time,
+    offset,
+    detector=None,
+    dark_images=20,
+    flat_images=50,
+    use_shutter=True,
 ):
+
+    if detector is None:
+        detector = kinetix1
 
     if use_shutter:
         if (yield from bps.rd(fe_shutter_status)) != 1:
@@ -39,24 +49,26 @@ def take_dark_flat(
     if use_shutter:
         yield from bps.mv(ph_shutter, "Close")
 
-    kinetix_writer._directory_provider._frame_type = FrameType.dark
+    detector._writer._path_provider._filename_provider.set_frame_type(
+        TomoFrameType.dark
+    )
 
-    yield from bps.stage_all(kinetix_standard_det, kinetix_flyer)
+    yield from bps.stage_all(detector, kinetix_flyer)
 
     yield from bps.prepare(
         kinetix_flyer,
-        KinetixTriggerSetup(
+        StandardTriggerSetup(
             num_images=dark_images,
             exposure_time=exposure_time,
             software_trigger=True,
         ),
         wait=True,
     )
-    yield from bps.prepare(kinetix_standard_det, kinetix_flyer.trigger_info, wait=True)
+    yield from bps.prepare(detector, kinetix_flyer.trigger_info, wait=True)
 
     yield from inner_kinetix_collect()
 
-    yield from bps.unstage_all(kinetix_flyer, kinetix_standard_det)
+    yield from bps.unstage_all(kinetix_flyer, detector)
 
     #### FLATS ####
 
@@ -68,24 +80,26 @@ def take_dark_flat(
         yield from bps.mv(ph_shutter, "Open")
     yield from bps.sleep(2)
 
-    kinetix_writer._directory_provider._frame_type = FrameType.flat
+    detector._writer._path_provider._filename_provider.set_frame_type(
+        TomoFrameType.flat
+    )
 
-    yield from bps.stage_all(kinetix_standard_det, kinetix_flyer)
+    yield from bps.stage_all(detector, kinetix_flyer)
 
     yield from bps.prepare(
         kinetix_flyer,
-        KinetixTriggerSetup(
+        StandardTriggerSetup(
             num_images=flat_images,
             exposure_time=exposure_time,
             software_trigger=True,
         ),
         wait=True,
     )
-    yield from bps.prepare(kinetix_standard_det, kinetix_flyer.trigger_info, wait=True)
+    yield from bps.prepare(detector, kinetix_flyer.trigger_info, wait=True)
 
     yield from inner_kinetix_collect()
 
-    yield from bps.unstage_all(kinetix_flyer, kinetix_standard_det)
+    yield from bps.unstage_all(kinetix_flyer, detector)
 
     yield from bps.close_run()
 
@@ -97,6 +111,8 @@ def take_dark_flat(
 def tomo_flyscan(
     exposure_time,
     num_images,
+    panda=None,
+    detector=None,
     scan_time=30,
     start_deg=0,
     stop_deg=180,
@@ -126,6 +142,12 @@ def tomo_flyscan(
         whether to use/check the shutter during the scan
     """
 
+    if panda is None:
+        panda = panda1
+
+    if detector is None:
+        detector = kinetix1
+
     if use_shutter:
         if (yield from bps.rd(fe_shutter_status)) != 1:
             raise RuntimeError(f"\n    Front-end shutter is closed. Reopen it!\n")
@@ -133,12 +155,12 @@ def tomo_flyscan(
         yield from bps.mv(ph_shutter, "Open")
         yield from bps.sleep(2)
 
-    panda_detectors = [panda_flyer, panda_standard_det]
-    kinetix_detectors = [kinetix_flyer, kinetix_standard_det]
+    panda_detectors = [panda_flyer, panda]
+    kinetix_detectors = [kinetix_flyer, detector]
 
     detectors = panda_detectors + kinetix_detectors
 
-    panda1_pcomp_1 = dict(panda1_async.pcomp.children())["1"]
+    panda_pcomp = dict(panda.pcomp.children())["1"]
 
     mtr_reset_vel = reset_speed
     if mtr_reset_vel > TOMO_ROTARY_STAGE_VELO_RESET_MAX:
@@ -154,9 +176,9 @@ def tomo_flyscan(
 
     framerate = 1 / step_time
 
-    kinetix_mode = yield from bps.rd(kinetix_async.readout_mode)
-    if framerate > KINETIX_MAX_FRAMERATES[kinetix_mode]:
-        step_time = 1 / KINETIX_MAX_FRAMERATES[kinetix_mode]
+    det_readout_mode = yield from bps.rd(detector.drv.readout_port_idx)
+    if framerate > DETECTOR_MAX_FRAMERATES[det_readout_mode]:
+        step_time = 1 / DETECTOR_MAX_FRAMERATES[det_readout_mode]
 
     if exposure_time is not None:
         if exposure_time > step_time:
@@ -172,8 +194,8 @@ def tomo_flyscan(
     #        "The number of encoder counts per pulse is not an integer value!"
     #    )
 
-    kinetix_exp_setup = KinetixTriggerSetup(
-        num_images=num_images,
+    det_exp_setup = StandardTriggerSetup(
+        num_frames=num_images,
         exposure_time=exposure_time,
         software_trigger=False,
     )
@@ -186,32 +208,38 @@ def tomo_flyscan(
     start_encoder = start_deg * COUNTS_PER_DEG - ZERO_OFFSET
 
     # Set up the pcomp block
-    yield from bps.mv(panda1_pcomp_1.start, int(start_encoder))
+    yield from bps.mv(panda_pcomp.start, int(start_encoder))
 
     # Uncomment if using gate trigger mode on camera
     yield from bps.mv(
-        panda1_pcomp_1.width, 3  # step_width_counts - 1
+        panda_pcomp.width, 3  # step_width_counts - 1
     )  # Width in encoder counts that the pulse will be high
     # yield from bps.mv(panda1_pcomp_1.step, step_width_counts)
-    # yield from bps.mv(panda1_pcomp_1.pulses, num_images)
+    yield from bps.mv(panda_pcomp.pulses, num_images)
 
     yield from bps.open_run()
 
-    kinetix_writer._directory_provider._frame_type = FrameType.scan
+    detector._writer._path_provider._filename_provider.set_frame_type(
+        TomoFrameType.proj
+    )
 
     # Stage All!
     yield from bps.stage_all(*detectors)
 
     # Set HDF plugin numcapture to num_images
-    yield from bps.mv(kinetix_writer.hdf.num_capture, num_images)
+    yield from bps.mv(detector._writer.hdf.num_capture, num_images)
 
-    assert kinetix_flyer._trigger_logic.state == KinetixTriggerState.stopping
-    yield from bps.prepare(kinetix_flyer, kinetix_exp_setup, wait=True)
-    yield from bps.prepare(kinetix_standard_det, kinetix_flyer.trigger_info, wait=True)
+    assert kinetix_flyer._trigger_logic.state == StandardTriggerState.stopping
+    yield from bps.prepare(kinetix_flyer, det_exp_setup, wait=True)
+    yield from bps.prepare(
+        detector, kinetix_flyer.trigger_logic.trigger_info(det_exp_setup), wait=True
+    )
 
-    assert panda_flyer._trigger_logic.state == KinetixTriggerState.stopping
-    yield from bps.prepare(panda_flyer, num_images, wait=True)
-    yield from bps.prepare(panda_standard_det, panda_flyer.trigger_info, wait=True)
+    assert panda_flyer._trigger_logic.state == StandardTriggerState.stopping
+    yield from bps.prepare(panda_flyer, det_exp_setup, wait=True)
+    yield from bps.prepare(
+        panda, panda_flyer.trigger_logic.trigger_info(num_images), wait=True
+    )
 
     # Move rotation axis to the stop position + the lead angle:
     yield from bps.mv(tomo_rot_axis, stop_deg + lead_angle)
@@ -223,7 +251,7 @@ def tomo_flyscan(
         yield from bps.complete(flyer_or_det, wait=True, group="complete_panda")
 
     for flyer_or_det in kinetix_detectors:
-        yield from bps.complete(flyer_or_det, wait=True, group="complete_kinetix")
+        yield from bps.complete(flyer_or_det, wait=True, group="complete_detector")
 
     # Wait for completion of the PandA HDF5 file saving.
     done = False
@@ -234,11 +262,15 @@ def tomo_flyscan(
             pass
         else:
             done = True
+
+        panda_stream_name = f"{panda.name}_stream"
+        yield from bps.declare_stream(panda, name=panda_stream_name)
+
         yield from bps.collect(
-            panda_standard_det,
-            stream=True,
-            return_payload=False,
-            name=f"{panda_standard_det.name}_stream",
+            panda,
+            # stream=True,
+            # return_payload=False,
+            name=panda_stream_name,
         )
 
     yield from bps.unstage_all(*panda_detectors)
@@ -250,23 +282,27 @@ def tomo_flyscan(
     done = False
     while not done:
         try:
-            yield from bps.wait(group="complete_kinetix", timeout=0.5)
+            yield from bps.wait(group="complete_detector", timeout=0.5)
         except TimeoutError:
             pass
         else:
             done = True
+
+        detector_stream_name = f"{detector.name}_stream"
+        yield from bps.declare_stream(detector, name=detector_stream_name)
+
         yield from bps.collect(
-            kinetix_standard_det,
-            stream=True,
-            return_payload=False,
-            name=f"{kinetix_standard_det.name}_stream",
+            detector,
+            # stream=True,
+            # return_payload=False,
+            name=detector_stream_name,
         )
         yield from bps.sleep(0.01)
 
     yield from bps.close_run()
 
-    panda_val = yield from bps.rd(writer.hdf.num_captured)
-    kinetix_val = yield from bps.rd(kinetix_writer.hdf.num_captured)
+    panda_val = yield from bps.rd(panda.data.num_captured)
+    kinetix_val = yield from bps.rd(detector._writer.hdf.num_captured)
     print(f"{panda_val = }    {kinetix_val = }")
 
     yield from bps.unstage_all(*kinetix_detectors)

@@ -23,15 +23,19 @@ from PIL import Image
 class HEXGeRMDetectorHDF5(GeRMDetectorHDF5):
     """HEX-specific ophyd class for GeRM detector producing HDF5 files."""
 
-    def describe(self):
-        res = super().describe()
-        res[self.image.name].update(
-            {
-                "shape": self.frame_shape.get().tolist(),
-                "dtype_str": "<f4",
-            }
+    def stage(self):
+        self._root_dir = str(
+            Path(
+                "/nsls2/data/hex/proposals",
+                # RE.md["cycle"],
+                "commissioning",
+                # RE.md["data_session"],
+                "pass-314022",
+                "assets",
+                "default",
+            )
         )
-        return res
+        return super().stage()
 
     def stop(self, *, success=False):
         # TODO: see why it's not called by RE on RE.stop()
@@ -46,9 +50,9 @@ class HEXGeRMDetectorHDF5(GeRMDetectorHDF5):
 germ_detector = HEXGeRMDetectorHDF5(
     "XF:27ID1-ES{GeRM-Det:1}",
     name="GeRM",
-    root_dir="/nsls2/data/hex/proposals/commissioning/pass-315258/raw_data/",
+    root_dir="PLACEHOLDER",
 )
-
+germ_detector.frame_shape.kind = Kind.omitted
 
 # TODO: rework the exporter based on Tiled.
 # TODO 2: add motor positions.
@@ -114,7 +118,9 @@ GERM_DETECTOR_KEYS = [
 ]
 
 
-def get_detector_parameters(det=germ_detector, keys=GERM_DETECTOR_KEYS):
+def get_detector_parameters(det=None, keys=GERM_DETECTOR_KEYS):
+    if det is None:
+        det = germ_detector
     group_key = f"{det.name.lower()}_detector"
     detector_metadata = {group_key: {}}
     for key in keys:

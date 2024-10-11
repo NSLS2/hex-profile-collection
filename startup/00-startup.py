@@ -27,6 +27,8 @@ from ophyd.signal import EpicsSignalBase
 from redis_json_dict import RedisJSONDict
 from tiled.client import from_uri
 
+# warnings.filterwarnings("ignore")
+
 plt.ion()
 
 
@@ -215,7 +217,7 @@ def print_docs(name, doc):
 
 #RE.subscribe(print_docs)
 
-def reset_scan_id(scan_id=1):
+def reset_scan_id(scan_id=0):
     """A fake plan to reset the scan_id via qserver."""
     yield from bps.null()
     print(f"Scan_id before: {RE.md['scan_id']}")

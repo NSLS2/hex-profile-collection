@@ -40,7 +40,7 @@ class ProposalNumYMDPathProvider(YMDPathProvider):
             self._base_directory_path / RE.md["cycle"] / RE.md["data_session"] / "assets"
         )
         sep = os.path.sep
-        current_date = date.today().strftime(f"%Y_%m")
+        current_date = date.today().strftime(f"%Y")
         if device_name is None:
             ymd_dir_path = current_date
         elif self._device_name_as_base_dir:
@@ -54,7 +54,7 @@ class ProposalNumYMDPathProvider(YMDPathProvider):
                 current_date,
             )
 
-        final_dir_path = proposal_assets / ymd_dir_path
+        final_dir_path = proposal_assets / ymd_dir_path / f"scan_{str(RE.md['scan_id']).zfill(5)}"
 
 
         filename = self._filename_provider(device_name=device_name)

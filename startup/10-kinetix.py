@@ -150,4 +150,69 @@ def _kinetix_collect_dark_flat(
     yield from bps.close_run()
 
 
+def kinetix_fly(
+    detectors=None,
+    exposure_time=0.05,
+    flyer=None,
+    num=10,
+    stream_name="proj"
+):  # Note: 724 points are specific for the "rotation_sim_04" panda config!
+    
+    if detectors is None:
+        detectors = [kinetix1]
+    if flyer is None:
+        flyer = kinetix_flyer
+
+    kinetix_exp_setup = StandardTriggerSetup(
+        num_frames=num, exposure_time=exposure_time, software_trigger=True
+    )
+
+    yield from bps.stage_all(*detectors, flyer)
+    yield from bps.prepare(flyer, num, wait=True)
+    for detector in detectors:
+        yield from bps.prepare(detector, flyer.trigger_logic.trigger_info(kinetix_exp_setup), wait=True)
+
+    # detector.controller.disarm.assert_called_once  # type: ignore
+
+    uuid = yield from bps.open_run()
+
+    yield from bps.kickoff(flyer)
+    for detector in detectors:
+        yield from bps.kickoff(detector)
+
+    for detector in detectors:
+        yield from bps.complete(detector, wait=True, group="complete")
+
+    # Manually incremenet the index as if a frame was taken
+    # detector.writer.index += 1
+
+    for detector in detectors:
+        yield from bps.declare_stream(detector, name=f"{detector.name}_{stream_name}")
+
+    done = False
+    while not done:
+        try:
+            yield from bps.wait(group="complete", timeout=0.5)
+        except TimeoutError:
+            pass
+        else:
+            done = True
+        for detector in detectors:
+            yield from bps.collect(
+                detector,
+                name=f"{detector.name}_{stream_name}",
+            )
+        yield from bps.sleep(0.01)
+
+    yield from bps.wait(group="complete")
+    for detector in detectors:
+        val = yield from bps.rd(detector.hdf.num_captured)
+        print(f"{detector.name}: {val}")
+    
+    yield from bps.close_run()
+
+    yield from bps.unstage_all(flyer, *detectors)
+    return uuid
+
+
 file_loading_timer.stop_timer(__file__)

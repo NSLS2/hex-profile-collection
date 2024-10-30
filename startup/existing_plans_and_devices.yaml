@@ -324,7 +324,7 @@ existing_devices:
         is_movable: true
         is_readable: true
         module: ophyd.signal
-      file_name_prefix:
+      file_name:
         classname: EpicsSignal
         is_flyable: false
         is_movable: true
@@ -555,19 +555,19 @@ existing_devices:
     is_flyable: false
     is_movable: false
     is_readable: true
-    module: __main__
+    module: hextools.germ.ophyd
   kinetix1:
-    classname: KinetixDetector
+    classname: HEXKinetixDetector
     is_flyable: true
     is_movable: false
     is_readable: true
-    module: ophyd_async.epics.adkinetix._kinetix
+    module: __main__
   kinetix3:
-    classname: KinetixDetector
+    classname: HEXKinetixDetector
     is_flyable: true
     is_movable: false
     is_readable: true
-    module: ophyd_async.epics.adkinetix._kinetix
+    module: __main__
   kinetix_flyer:
     classname: StandardFlyer
     is_flyable: true
@@ -769,49 +769,24 @@ existing_devices:
     is_movable: false
     is_readable: false
     module: ophyd_async.core._flyer
-  ph_shutter:
-    classname: HEXTwoButtonShutter
-    components:
-      close_cmd:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      enabled_status:
-        classname: EpicsSignalRO
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      fail_to_close:
-        classname: EpicsSignalRO
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      fail_to_open:
-        classname: EpicsSignalRO
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      open_cmd:
-        classname: EpicsSignal
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
-      status:
-        classname: EpicsSignalRO
-        is_flyable: false
-        is_movable: true
-        is_readable: true
-        module: ophyd.signal
+  ph_close_cmd:
+    classname: EpicsSignal
     is_flyable: false
     is_movable: true
     is_readable: true
-    module: __main__
+    module: ophyd.signal
+  ph_open_cmd:
+    classname: EpicsSignal
+    is_flyable: false
+    is_movable: true
+    is_readable: true
+    module: ophyd.signal
+  ph_shutter_status:
+    classname: EpicsSignalRO
+    is_flyable: false
+    is_movable: true
+    is_readable: true
+    module: ophyd.signal
   sample_tower:
     classname: SampleTower
     components:
@@ -2522,26 +2497,6 @@ existing_plans:
       name: software_trigger
     properties:
       is_generator: true
-  acquire_germ_detector:
-    module: __main__
-    name: acquire_germ_detector
-    parameters:
-    - kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: count_time
-    - default: None
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: detector
-    - default: '1'
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: num
-    properties:
-      is_generator: true
   adaptive_scan:
     description: Scan over one variable with adaptively tuned step size.
     module: bluesky.plans
@@ -2629,10 +2584,9 @@ existing_plans:
       name: md
     properties:
       is_generator: true
-  close_shutter:
-    description: Close the shutter after the scan.
+  close_ph_shutter:
     module: __main__
-    name: close_shutter
+    name: close_ph_shutter
     parameters: []
     properties:
       is_generator: true
@@ -3094,6 +3048,12 @@ existing_plans:
       name: md
     properties:
       is_generator: true
+  open_ph_shutter:
+    module: __main__
+    name: open_ph_shutter
+    parameters: []
+    properties:
+      is_generator: true
   outer_product_scan:
     description: Scan over a mesh; each motor is on an independent trajectory.
     module: bluesky.plans
@@ -3163,6 +3123,13 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: num
+    properties:
+      is_generator: true
+  post_tomo_fly_cleanup:
+    description: Cleanup to perform at the end of every flyscan
+    module: __main__
+    name: post_tomo_fly_cleanup
+    parameters: []
     properties:
       is_generator: true
   print_summary_wrapper:
@@ -4426,7 +4393,7 @@ existing_plans:
     module: __main__
     name: reset_scan_id
     parameters:
-    - default: '1'
+    - default: '0'
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -5010,7 +4977,7 @@ existing_plans:
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
-      name: md
+      name: sample_name
     properties:
       is_generator: true
   tomo_loop:

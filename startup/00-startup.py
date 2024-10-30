@@ -101,21 +101,22 @@ tiled_writing_client = from_uri(
 tw = TiledWriter(tiled_writing_client)
 RE.subscribe(tw)
 
-c = tiled_reading_client = from_uri(
-    "https://tiled.nsls2.bnl.gov/api/v1/metadata/hex/raw",
-    include_data_sources=True,
-)
+# c = tiled_reading_client = from_uri(
+#     "https://tiled.nsls2.bnl.gov/api/v1/metadata/hex/raw",
+#     include_data_sources=True,
+#     #username=None
+# )
 
-def logout():
-    """
-    Logout of tiled and reset the default username.
-    This is needed to switch between different users.
-    """
+# def logout():
+#     """
+#     Logout of tiled and reset the default username.
+#     This is needed to switch between different users.
+#     """
 
-    c.logout()
+#     c.logout()
 
-    from tiled.client.context import clear_default_identity
-    clear_default_identity(c.context.api_uri)
+#     from tiled.client.context import clear_default_identity
+#     clear_default_identity(c.context.api_uri)
 
 # db = Broker(c)
 

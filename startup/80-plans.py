@@ -12,12 +12,12 @@ def example_plan_2():
     yield from example_plan()
 
 
-def acquire_germ_detector(count_time, detector=None, num=1):
-    if detector is None:
-        detector = germ_detector
-    yield from bps.mv(detector.count_time, count_time)
-    uid = yield from bp.count([detector], num=num)
-    return uid
+# def acquire_germ_detector(count_time, detector=None, num=1):
+#     if detector is None:
+#         detector = germ_detector
+#     yield from bps.mv(detector.count_time, count_time)
+#     uid = yield from bp.count([detector], num=num)
+#     return uid
 
 
 def count_germ(count_time, num=1, detector=None, md=None):

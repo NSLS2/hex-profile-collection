@@ -277,17 +277,43 @@ sd.baseline += [getattr(mca1_motors, m) for m in mca1_motors.component_names]
 fe_shutter_status = EpicsSignalRO(
     "XF:27IDA-PPS{Sh:FE}Sts:OpnCmd-Sts", name="fe_shutter_status", string=False
 )
-from nslsii.devices import TwoButtonShutter
+# from nslsii.devices import TwoButtonShutter
 
 
-class HEXTwoButtonShutter(TwoButtonShutter):
+# class HEXTwoButtonShutter(TwoButtonShutter):
 
-    RETRY_PERIOD = 3.0
+#     RETRY_PERIOD = 2.0
+#     MAX_ATTEMPTS = 10
     
-    def stop(self, *, success=False):
-        pass
+#     def stop(self, *, success=False):
+#         pass
 
 
-ph_shutter = HEXTwoButtonShutter("XF:27IDA-PPS{L1-S1}", name="ph_shutter")
+#ph_shutter = HEXTwoButtonShutter("XF:27IDA-PPS{L1-S1}", name="ph_shutter")
+ph_shutter_status = EpicsSignalRO(
+    "XF:27IDA-PPS{L1-S1}Pos-Sts", name="ph_shutter_status", string=False
+)
+ph_open_cmd = EpicsSignal(
+    "XF:27IDA-PPS{L1-S1}Cmd:Opn-Cmd", name="ph_shutter_open", string=False
+)
+ph_close_cmd = EpicsSignal(
+    "XF:27IDA-PPS{L1-S1}Cmd:Cls-Cmd", name="ph_shutter_close", string=False
+)
+
+# The two button shutter class does not seem to agree with HEX's photon shutter.
+# Potentially because of a minor EPS alarm state in the open position?
+# For now just actuating the signals and waiting for a few seconds seems to be more reliable.
+def open_ph_shutter():
+    print("Opening photon shutter...")
+    yield from bps.abs_set(ph_open_cmd, 1)
+    yield from bps.sleep(3)
+    print("Done.")
+
+def close_ph_shutter():
+    print("Closing photon shutter...")
+    yield from bps.abs_set(ph_close_cmd, 1)
+    yield from bps.sleep(3)
+    print("Done.")
+
 
 file_loading_timer.stop_timer(__file__)

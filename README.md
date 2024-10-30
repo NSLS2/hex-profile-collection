@@ -1,8 +1,8 @@
-# TOMO setup
+# NSLS-II-HEX Bluesky Profile
 
 ## Conda environment
 
-`/home/xf27id1/conda_envs/2024-1.0-py310-tiled-dev` on `xf27id1-ws2` machine.
+Requires `2024-2.3-py311-tiled` conda environment, with overlays w/ non-tagged source installs of ophyd-async, bluesky, hextools, 
 
 ### Update on 5/15/24:
 

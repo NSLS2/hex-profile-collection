@@ -19,12 +19,21 @@ TOMO_ROTARY_STAGE_VELO_RESET_MAX = 30
 TOMO_ROTARY_STAGE_VELO_SCAN_MAX = 60
 
 
-def close_shutter():
-    """Close the shutter after the scan."""
-    yield from bps.mv(ph_shutter, "Close")
+# def close_shutter():
+#     """Close the shutter after the scan."""
+#     yield from bps.mv(ph_shutter, "Close")
+#     yield from bps.sleep(2)
 
 
-@bpp.finalize_decorator(close_shutter)
+def post_tomo_fly_cleanup():
+    """Cleanup to perform at the end of every flyscan"""
+
+    yield from close_ph_shutter()
+    
+    # Reset the velocity back to high.
+    yield from bps.abs_set(tomo_rot_axis.velocity, TOMO_ROTARY_STAGE_VELO_RESET_MAX)
+
+@bpp.finalize_decorator(post_tomo_fly_cleanup)
 def tomo_dark_flat(
     exposure_time,
     offset,
@@ -53,7 +62,7 @@ def tomo_dark_flat(
 
     # Collect dark frames:
     if use_shutter:
-        yield from bps.mv(ph_shutter, "Close")
+        yield from close_ph_shutter()
 
     for detector in detectors:
         detector._writer._path_provider._filename_provider.set_frame_type(
@@ -87,8 +96,7 @@ def tomo_dark_flat(
 
     # Collect flat images:
     if use_shutter:
-        yield from bps.mv(ph_shutter, "Open")
-    yield from bps.sleep(2)
+        yield from open_ph_shutter()
 
     for detector in detectors:
         detector._writer._path_provider._filename_provider.set_frame_type(
@@ -155,7 +163,7 @@ def home_rotation_stage():
 
 
 
-@bpp.finalize_decorator(close_shutter)
+@bpp.finalize_decorator(post_tomo_fly_cleanup)
 def tomo_flyscan(
     exposure_time,
     num_images,
@@ -167,7 +175,7 @@ def tomo_flyscan(
     lead_angle=10,
     reset_speed=TOMO_ROTARY_STAGE_VELO_RESET_MAX,
     use_shutter=True,
-    md=None,
+    sample_name=None,
 ):
     """Simple hardware triggered flyscan tomography
 
@@ -201,8 +209,7 @@ def tomo_flyscan(
         if (yield from bps.rd(fe_shutter_status)) != 1:
             raise RuntimeError(f"\n    Front-end shutter is closed. Reopen it!\n")
 
-        yield from bps.mv(ph_shutter, "Open")
-        yield from bps.sleep(2)
+        yield from open_ph_shutter()
 
     panda_detectors_and_flyers = [panda_flyer, panda]
     kinetix_detectors_and_flyers = [kinetix_flyer, *detectors]
@@ -274,7 +281,12 @@ def tomo_flyscan(
     else:
         yield from bps.mv(panda_pcomp.pulses, num_images)
 
-    _md = md or {}
+    _md = {    
+        "detectors": [det.name for det in detectors],
+        "num_points": num_images,
+        "plan_name": "tomo_flyscan",
+        "hints": {},
+    }
     _md.update({"tomo_scanning_mode": ScanType.tomo_flyscan.value})
     yield from bps.open_run(md=_md)
 
@@ -339,9 +351,6 @@ def tomo_flyscan(
 
     yield from bps.unstage_all(*panda_detectors_and_flyers)
 
-    if use_shutter:
-        yield from close_shutter()
-
     for kinetix_det in detectors:
         detector_stream_name = f"{kinetix_det.name}_stream"
         yield from bps.declare_stream(kinetix_det, name=detector_stream_name)
@@ -352,14 +361,16 @@ def tomo_flyscan(
             # return_payload=False,
             name=detector_stream_name,
         )
-        yield from bps.sleep(0.01)
+        yield from bps.sleep(0.1)
 
     yield from bps.unstage_all(*kinetix_detectors_and_flyers)
 
     yield from bps.close_run()
-
+    
+    print("====================================================")
     print("====================================================\n\n")
-    print(f"Completed tomography scan with number number: {RE.md['scan_id']}.\n")
+    print(f"Completed tomography scan with scan number: {RE.md['scan_id']}.\n")
+    print("====================================================")
     print("====================================================\n\n")
 
 
@@ -373,9 +384,6 @@ def tomo_flyscan(
     print("Number frames captured:\n")
     for cap in captured.keys():
         print(f"    {cap:15}: {captured[cap]}")
-
-    # Reset the velocity back to high.
-    yield from bps.mv(tomo_rot_axis.velocity, reset_speed)
 
 
 

@@ -24,13 +24,26 @@ from ophyd_async.epics.adkinetix import KinetixDetector
 
 kinetix_trigger_logic = StandardTriggerLogic()
 
+class HEXKinetixDetector(KinetixDetector):
+    """Override base StandardDetector unstage class to reset into continuous mode after scan/abort"""
+
+    @AsyncStatus.wrap
+    async def unstage(self) -> None:
+        # Stop data writing.
+        await asyncio.gather(self.writer.close(), self.controller.disarm())
+
+        # Set to continuous internal trigger, and start acquiring
+        await self.controller._drv.trigger_mode.set("Internal")
+        await self.controller._drv.image_mode.set("Continuous")
+        await self.controller.arm()
+
 
 def connect_to_kinetix(kinetix_id):
 
     print(f"Connecting to kinetix {kinetix_id}...")
     with DeviceCollector():
         kinetix_path_provider = ProposalNumYMDPathProvider(default_filename_provider)
-        kinetix = KinetixDetector(
+        kinetix = HEXKinetixDetector(
             f"XF:27ID1-BI{{Kinetix-Det:{kinetix_id}}}",
             kinetix_path_provider,
             name=f"kinetix-det{kinetix_id}",

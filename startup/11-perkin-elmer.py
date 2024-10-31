@@ -48,7 +48,7 @@ class HEXTIFFPlugin(TIFFPlugin, FileStoreTIFFSquashing,
         file_name = self.file_name.get()
 
         stream_resource, self._stream_datum_factory = compose_stream_resource(mimetype="multipart/related;type=image/tiff",
-                                                                        uri=f"file://localhost/{fn}",
+                                                                        uri=f"file://localhost/{self.reg_root}/{fn}/",
                                                                         data_key=f"{self.parent.name}_image",
                                                                         parameters={
                                                                             "chunk_shape": (1, 2048, 2048),

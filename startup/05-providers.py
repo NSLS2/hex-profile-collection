@@ -36,13 +36,19 @@ class ProposalNumYMDPathProvider(YMDPathProvider):
         # This never changes.
         # RE.md['cycle'] -> 2024-2
         # RE.md['proposal'] -> 'pass-123456'
+        cycle = RE.md["cycle"]
+        if 'Beamline Commissioning' in RE.md['proposal']['type']:
+            cycle = 'commissioning'
+
         proposal_assets = (
-            self._base_directory_path / RE.md["cycle"] / RE.md["data_session"] / "assets"
+            self._base_directory_path / cycle / RE.md["data_session"] / "assets"
         )
         sep = os.path.sep
         current_date = date.today().strftime(f"%Y")
         if device_name is None:
             ymd_dir_path = current_date
+        elif device_name == "pilatus_det":
+            ymd_dir_path = os.path.join("default", current_date)
         elif self._device_name_as_base_dir:
             ymd_dir_path = os.path.join(
                 current_date,
@@ -105,7 +111,7 @@ class ScanIDFilenameProvider(UUIDFilenameProvider):
                 *self._uuid_call_args
             )  # Generate a new UUID
 
-        if device_name is None or not device_name.startswith("panda"):
+        if device_name is None or not device_name in ["panda1", "pilatus_det"]:
             filename = f"{self._frame_type.value}_scan_{str(RE.md['scan_id']).zfill(5)}_{self._uuid_for_scan}"
         else:
             filename = f"{device_name}_scan_{str(RE.md['scan_id']).zfill(5)}_{self._uuid_for_scan}"

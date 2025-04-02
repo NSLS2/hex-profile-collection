@@ -562,12 +562,6 @@ existing_devices:
     is_movable: false
     is_readable: true
     module: __main__
-  kinetix3:
-    classname: HEXKinetixDetector
-    is_flyable: true
-    is_movable: false
-    is_readable: true
-    module: __main__
   kinetix_flyer:
     classname: StandardFlyer
     is_flyable: true
@@ -4487,6 +4481,16 @@ existing_plans:
         name: KEYWORD_ONLY
         value: 3
       name: md
+    properties:
+      is_generator: true
+  sleep_for_secs:
+    module: __main__
+    name: sleep_for_secs
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: seconds
     properties:
       is_generator: true
   spiral:

@@ -514,4 +514,165 @@ def tomo_y_scan_loop(
     yield from bps.mv(sample_tower.vertical_y, pre_scan_position)
 
 
+# def pilatus_flyscan(
+#     exposure_time,
+#     acquire_period,
+#     num_images,
+#     panda=None,
+#     detector=None,
+#     use_shutter=True,
+# ):
+#     """Simple hardware triggered flyscan pilatus_flyscan
+
+#     Parameters
+#     ----------
+#     exposure_time : float
+#         exposure time to use on the camera, in seconds
+#     num_images : int
+#         total number of camera images to collect during the scan
+#     start_deg : float (optional)
+#         starting point in degrees
+#     stop_deg : float (optional)
+#         stopping point in degrees
+#     lead_angle : float (optional)
+#         the angle in degrees to be used to move motor to -lead_angle before 'start_deg' and +lead_angle after 'stop_deg'
+#     reset_speed : float
+#         speed of the rotary motor during reset movements, in deg/s
+#     use_shutter : bool
+#         whether to use/check the shutter during the scan
+#     """
+
+
+#     overhead = 0.005
+#     if panda is None:
+#         panda = panda1
+
+#     if detectors is None:
+#         detectors = pilatus_det
+
+#     if use_shutter:
+#         if (yield from bps.rd(fe_shutter_status)) != 1:
+#             raise RuntimeError(f"\n    Front-end shutter is closed. Reopen it!\n")
+
+#         yield from open_ph_shutter()
+
+#     panda_detectors_and_flyers = [panda_flyer, panda]
+#     pilatus_detectors_and_flyers = [pilatus_flyer, detector]
+
+#     all_detectors = panda_detectors_and_flyers + pilatus_detectors_and_flyers
+
+#     panda_pcomp = dict(panda.pcomp.children())["1"]
+#     panda_pulser = dict(panda.pulse.children())["1"]
+
+#     det_exp_setup = StandardTriggerSetup(
+#         num_frames=num_images,
+#         exposure_time=exposure_time,
+#         software_trigger=False,
+#     )
+
+#     yield from bps.mv(panda_pulser.pulses, num_images)
+#     yield from bps.mv(panda_pulser.step, acquire_period)
+#     yield from bps.mv(detector.drv.acquire_time, exposure_time)
+#     yield from bps.mv(detector.drv.acquire_period, acquire_period / 2)
+#     yield from bps.mv(panda_pulser.width, exposure_time / 5)
+
+
+#     _md = {    
+#         "detectors": [det.name for det in detectors],
+#         "num_points": num_images,
+#         "plan_name": "pilatus_flyscan",
+#         "hints": {},
+#     }
+#     yield from bps.open_run(md=_md)
+
+
+#     for detector in detectors:
+#         if hasattr(detector.writer.hdf, "queue_size"):
+#             yield from bps.mv(detector.writer.hdf.queue_size, num_images * 2)
+
+#     # Stage All!
+#     yield from bps.stage_all(*all_detectors)
+
+#     # Set HDF plugin numcapture to num_images
+#     yield from bps.mv(detector.writer.hdf.num_capture, num_images)
+
+#     assert pilatus_flyer._trigger_logic.state == StandardTriggerState.stopping
+#     yield from bps.prepare(pilatus_flyer, det_exp_setup, wait=True)
+#     for pilatus_det in detectors:
+#         yield from bps.prepare(
+#             pilatus_det, pilatus_flyer.trigger_logic.trigger_info(det_exp_setup), wait=True
+#         )
+
+#     assert panda_flyer._trigger_logic.state == StandardTriggerState.stopping
+#     yield from bps.prepare(panda_flyer, det_exp_setup, wait=True)
+#     yield from bps.prepare(
+#         panda, panda_flyer.trigger_logic.trigger_info(num_images), wait=True
+#     )
+
+#     for flyer_or_det in all_detectors:
+#         yield from bps.kickoff(flyer_or_det)
+
+#     print("Completing...")
+#     for flyer_or_det in all_detectors:
+#         yield from bps.complete(flyer_or_det, group="complete_all")
+
+#     # Wait for completion of file saving for the Kinetix detectors and the PandA
+#     done = False
+#     while not done:
+#         try:
+#             yield from bps.wait(group="complete_all", timeout=2.0)
+#         except TimeoutError:
+#             pass
+#         else:
+#             done = True
+
+#     panda_stream_name = f"{panda.name}_stream"
+#     yield from bps.declare_stream(panda, name=panda_stream_name)
+
+#     yield from bps.collect(
+#         panda,
+#         # stream=True,
+#         # return_payload=False,
+#         name=panda_stream_name,
+#     )
+
+#     yield from bps.unstage_all(*panda_detectors_and_flyers)
+
+#     detector_stream_name = f"{detector.name}_stream"
+#     yield from bps.declare_stream(detector, name=detector_stream_name)
+
+#     yield from bps.collect(
+#         detector,
+#         # stream=True,
+#         # return_payload=False,
+#         name=detector_stream_name,
+#     )
+#     yield from bps.sleep(0.1)
+
+#     yield from bps.unstage_all(*pilatus_detectors_and_flyers)
+
+#     yield from bps.close_run()
+    
+#     print("====================================================")
+#     print("====================================================\n\n")
+#     print(f"Completed pilatus flyscan scan with scan number: {RE.md['scan_id']}.\n")
+#     print("====================================================")
+#     print("====================================================\n\n")
+
+
+
+#     # Print out number of points captured by each detector
+#     captured = {}
+#     captured[panda.name] = yield from bps.rd(panda.data.num_captured)
+#     for kinetix_det in detectors:
+#         captured[kinetix_det.name] = yield from bps.rd(kinetix_det.writer.hdf.num_captured)
+    
+#     print("Number frames captured:\n")
+#     for cap in captured.keys():
+#         print(f"    {cap:15}: {captured[cap]}")
+
+
+
+
+
 file_loading_timer.stop_timer(__file__)

@@ -124,4 +124,7 @@ def sweep_motion(detector, count_time, motor, start, stop, max_moves=1000, md=No
 
     return (yield from bpp.finalize_wrapper(inner(), final_plan()))
 
+def sleep_for_secs(seconds):
+    yield from bps.sleep(seconds)
+
 file_loading_timer.stop_timer(__file__)

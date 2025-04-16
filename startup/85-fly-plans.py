@@ -6,12 +6,12 @@ DEG_PER_REVOLUTION = 360
 COUNTS_PER_DEG = COUNTS_PER_REVOLUTION / DEG_PER_REVOLUTION
 ZERO_OFFSET = 39660
 
-from ophyd_async.epics.adkinetix._kinetix_io import KinetixReadoutMode
+from ophyd_async.epics.adkinetix import KinetixReadoutMode
 
 DETECTOR_MAX_FRAMERATES = {
-    KinetixReadoutMode.sensitivity: 80,
-    KinetixReadoutMode.speed: 250,
-    KinetixReadoutMode.dynamic_range: 75,
+    KinetixReadoutMode.SENSITIVITY: 80,
+    KinetixReadoutMode.SPEED: 250,
+    KinetixReadoutMode.DYNAMIC_RANGE: 75,
 }
 
 
@@ -32,6 +32,29 @@ def post_tomo_fly_cleanup():
     
     # Reset the velocity back to high.
     yield from bps.abs_set(tomo_rot_axis.velocity, TOMO_ROTARY_STAGE_VELO_RESET_MAX)
+
+
+def software_flyscan(detectors: list[StandardDetector], num_images: int, exposure_time: float, stream_name: str):
+
+    yield from bps.stage_all(*detectors)
+
+    trigger_info = TriggerInfo(
+        number_of_triggers=num_images,
+        trigger=DetectorTrigger.INTERNAL,
+        livetime=exposure_time,
+    )
+    for det in detectors:
+        yield from bps.prepare(det, trigger_info, wait=True)
+
+    yield from bps.declare_stream(*detectors, name=stream_name)
+
+    yield from bps.kickoff_all(*detectors, wait=True)
+    yield from bps.complete_all(*detectors, wait=True)
+    for det in detectors:
+        yield from bps.collect(det, name=stream_name)
+
+    yield from bps.unstage_all(*detectors)
+
 
 @bpp.finalize_decorator(post_tomo_fly_cleanup)
 def tomo_dark_flat(
@@ -69,25 +92,12 @@ def tomo_dark_flat(
             TomoFrameType.dark
         )
 
-    yield from bps.stage_all(*detectors, kinetix_flyer)
-    dark_setup  =        StandardTriggerSetup(
-            num_frames=dark_images,
-            exposure_time=exposure_time,
-            software_trigger=True,
-        )
-    yield from bps.prepare(
-        kinetix_flyer,
-        dark_setup,
-        wait=True,
+    yield from software_flyscan(
+        detectors,
+        dark_images,
+        exposure_time,
+        "dark"
     )
-    for detector in detectors:
-        yield from bps.prepare(detector, kinetix_flyer.trigger_logic.trigger_info(dark_setup), wait=True)
-
-    for detector in detectors:
-        yield from inner_kinetix_collect(detector)
-
-
-    yield from bps.unstage_all(kinetix_flyer, *detectors)
 
     #### FLATS ####
 
@@ -103,26 +113,12 @@ def tomo_dark_flat(
             TomoFrameType.flat
         )
 
-    yield from bps.stage_all(*detectors, kinetix_flyer)
-
-    flat_setup =         StandardTriggerSetup(
-            num_frames=flat_images,
-            exposure_time=exposure_time,
-            software_trigger=True,
-        )
-
-    yield from bps.prepare(
-        kinetix_flyer,
-        flat_setup,
-        wait=True,
+    yield from software_flyscan(
+        detectors,
+        flat_images,
+        exposure_time,
+        "flat"
     )
-    for detector in detectors:
-        yield from bps.prepare(detector, kinetix_flyer.trigger_logic.trigger_info(flat_setup), wait=True)
-
-    for detector in detectors:
-        yield from inner_kinetix_collect(detector)
-
-    yield from bps.unstage_all(kinetix_flyer, *detectors)
 
     yield from bps.close_run()
 
@@ -136,22 +132,6 @@ def tomo_dark_flat(
     print("====================================================\n\n")
     print(f"Completed collection of dark and flat images with scan number: {RE.md['scan_id']}.")
     print("====================================================\n\n")
-
-
-def tomo_progress_bar(target, kinetix_detector):
-    current = yield from bps.rd(kinetix_detector.writer.hdf.num_captured)
-
-    toolbar_width = 100
-
-    # setup toolbar
-    sys.stdout.write("[%s]" % (" " * toolbar_width))
-    sys.stdout.flush()
-    sys.stdout.write("\b" * (toolbar_width+1)) # return to start of line, after '['
-
-    sys.stdout.write("-" * int(toolbar_width * (target / current)))
-    sys.stdout.flush()
-
-    sys.stdout.write("]\n")
 
 
 def home_rotation_stage():
@@ -211,13 +191,10 @@ def tomo_flyscan(
 
         yield from open_ph_shutter()
 
-    panda_detectors_and_flyers = [panda_flyer, panda]
-    kinetix_detectors_and_flyers = [kinetix_flyer, *detectors]
+    all_detectors = [panda] + detectors
 
-    all_detectors = panda_detectors_and_flyers + kinetix_detectors_and_flyers
-
-    panda_pcomp = dict(panda.pcomp.children())["1"]
-    panda_pulser = dict(panda.pulse.children())["1"]
+    panda_pcomp = panda.pcomp[1]
+    panda_pulser = panda.pulse[1]
 
     mtr_reset_vel = reset_speed
     if mtr_reset_vel > TOMO_ROTARY_STAGE_VELO_RESET_MAX:
@@ -234,7 +211,7 @@ def tomo_flyscan(
     framerate = 1 / step_time
 
     for kinetix_det in detectors:
-        det_readout_mode = yield from bps.rd(kinetix_det.drv.readout_port_idx)
+        det_readout_mode = yield from bps.rd(kinetix_det.driver.readout_port_idx)
         if framerate > DETECTOR_MAX_FRAMERATES[det_readout_mode]:
             step_time = 1 / DETECTOR_MAX_FRAMERATES[det_readout_mode]
 
@@ -252,10 +229,18 @@ def tomo_flyscan(
     #        "The number of encoder counts per pulse is not an integer value!"
     #    )
 
-    det_exp_setup = StandardTriggerSetup(
-        num_frames=num_images,
-        exposure_time=exposure_time,
-        software_trigger=False,
+    det_trigger_info = TriggerInfo(
+        number_of_triggers=num_images,
+        trigger=DetectorTrigger.EDGE_TRIGGER,
+        livetime=exposure_time,
+        deadtime=0.001,
+    )
+
+    panda_trigger_info = TriggerInfo(
+        number_of_triggers=num_images,
+        trigger=DetectorTrigger.CONSTANT_GATE,
+        livetime=exposure_time,
+        deadtime=0.0001,
     )
 
     # Make it fast to move to the start position:
@@ -274,12 +259,17 @@ def tomo_flyscan(
     )  # Width in encoder counts that the pulse will be high
     # yield from bps.mv(panda1_pcomp_1.step, step_width_counts)
     if time_trigger:
-        yield from bps.mv(panda_pcomp.pulses, 1)
-        yield from bps.mv(panda_pulser.pulses, num_images)
-        yield from bps.mv(panda_pulser.step, step_time)
-        yield from bps.mv(panda_pulser.width, exposure_time / 5)
+        yield from bps.mv(
+            panda_pcomp.pulses, 1,
+            panda_pulser.pulses, num_images,
+            panda_pulser.step, step_time,
+            panda_pulser.width, exposure_time / 5,
+        )
     else:
         yield from bps.mv(panda_pcomp.pulses, num_images)
+
+    # Set dataset name of calc 2 to "Angle"
+    yield from bps.mv(panda.calc[2].out_dataset, "Angle")
 
     _md = {    
         "detectors": [det.name for det in detectors],
@@ -292,78 +282,38 @@ def tomo_flyscan(
 
     print(f"Executing tomography scan with number number: {RE.md['scan_id']}...\n")
 
-    for kinetix_det in detectors:
-        kinetix_det.writer._path_provider._filename_provider.set_frame_type(
+    for det in detectors:
+        det._writer._path_provider._filename_provider.set_frame_type(
             TomoFrameType.proj
         )
-        if hasattr(kinetix_det.writer.hdf, "queue_size"):
-            yield from bps.mv(kinetix_det.writer.hdf.queue_size, num_images * 2)
+        if hasattr(det.fileio, "queue_size"):
+            yield from bps.mv(det.fileio.queue_size, num_images * 2)
 
     # Stage All!
     yield from bps.stage_all(*all_detectors)
 
-    # Set HDF plugin numcapture to num_images
-    for kinetix_det in detectors:
-        yield from bps.mv(kinetix_det.writer.hdf.num_capture, num_images)
-
-    assert kinetix_flyer._trigger_logic.state == StandardTriggerState.stopping
-    yield from bps.prepare(kinetix_flyer, det_exp_setup, wait=True)
-    for kinetix_det in detectors:
+    for det in detectors:
         yield from bps.prepare(
-            kinetix_det, kinetix_flyer.trigger_logic.trigger_info(det_exp_setup), wait=True
+            det, det_trigger_info, wait=True
         )
 
-    assert panda_flyer._trigger_logic.state == StandardTriggerState.stopping
-    yield from bps.prepare(panda_flyer, det_exp_setup, wait=True)
     yield from bps.prepare(
-        panda, panda_flyer.trigger_logic.trigger_info(num_images), wait=True
+        panda, panda_trigger_info, wait=True
     )
 
-    for flyer_or_det in all_detectors:
-        yield from bps.kickoff(flyer_or_det)
+    yield from bps.declare_stream(*all_detectors, name="tomo")
+
+    yield from bps.kickoff_all(*all_detectors, wait=True)
 
     # Move rotation axis to the stop position + the lead angle:
-    yield from bps.mv(tomo_rot_axis, stop_deg + lead_angle)
+    movement_status = tomo_rot_axis.set(stop_deg + lead_angle, wait=False)
 
     print("Completing...")
-    for flyer_or_det in all_detectors:
-        yield from bps.complete(flyer_or_det, group="complete_all")
+    yield from bps.collect_while_completing(all_detectors, all_detectors, flush_period=1, stream_name="tomo")
+    yield from bps.unstage_all(*all_detectors)
 
-    # Wait for completion of file saving for the Kinetix detectors and the PandA
-    done = False
-    while not done:
-        try:
-            yield from bps.wait(group="complete_all", timeout=2.0)
-        except TimeoutError:
-            pass
-        else:
-            done = True
-
-    panda_stream_name = f"{panda.name}_stream"
-    yield from bps.declare_stream(panda, name=panda_stream_name)
-
-    yield from bps.collect(
-        panda,
-        # stream=True,
-        # return_payload=False,
-        name=panda_stream_name,
-    )
-
-    yield from bps.unstage_all(*panda_detectors_and_flyers)
-
-    for kinetix_det in detectors:
-        detector_stream_name = f"{kinetix_det.name}_stream"
-        yield from bps.declare_stream(kinetix_det, name=detector_stream_name)
-
-        yield from bps.collect(
-            kinetix_det,
-            # stream=True,
-            # return_payload=False,
-            name=detector_stream_name,
-        )
-        yield from bps.sleep(0.1)
-
-    yield from bps.unstage_all(*kinetix_detectors_and_flyers)
+    # Make sure rotation movement is done
+    movement_status.wait()
 
     yield from bps.close_run()
     
@@ -374,12 +324,11 @@ def tomo_flyscan(
     print("====================================================\n\n")
 
 
-
     # Print out number of points captured by each detector
     captured = {}
     captured[panda.name] = yield from bps.rd(panda.data.num_captured)
-    for kinetix_det in detectors:
-        captured[kinetix_det.name] = yield from bps.rd(kinetix_det.writer.hdf.num_captured)
+    for det in detectors:
+        captured[det.name] = yield from bps.rd(det.fileio.num_captured)
     
     print("Number frames captured:\n")
     for cap in captured.keys():
@@ -512,167 +461,5 @@ def tomo_y_scan_loop(
     yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
 
     yield from bps.mv(sample_tower.vertical_y, pre_scan_position)
-
-
-# def pilatus_flyscan(
-#     exposure_time,
-#     acquire_period,
-#     num_images,
-#     panda=None,
-#     detector=None,
-#     use_shutter=True,
-# ):
-#     """Simple hardware triggered flyscan pilatus_flyscan
-
-#     Parameters
-#     ----------
-#     exposure_time : float
-#         exposure time to use on the camera, in seconds
-#     num_images : int
-#         total number of camera images to collect during the scan
-#     start_deg : float (optional)
-#         starting point in degrees
-#     stop_deg : float (optional)
-#         stopping point in degrees
-#     lead_angle : float (optional)
-#         the angle in degrees to be used to move motor to -lead_angle before 'start_deg' and +lead_angle after 'stop_deg'
-#     reset_speed : float
-#         speed of the rotary motor during reset movements, in deg/s
-#     use_shutter : bool
-#         whether to use/check the shutter during the scan
-#     """
-
-
-#     overhead = 0.005
-#     if panda is None:
-#         panda = panda1
-
-#     if detectors is None:
-#         detectors = pilatus_det
-
-#     if use_shutter:
-#         if (yield from bps.rd(fe_shutter_status)) != 1:
-#             raise RuntimeError(f"\n    Front-end shutter is closed. Reopen it!\n")
-
-#         yield from open_ph_shutter()
-
-#     panda_detectors_and_flyers = [panda_flyer, panda]
-#     pilatus_detectors_and_flyers = [pilatus_flyer, detector]
-
-#     all_detectors = panda_detectors_and_flyers + pilatus_detectors_and_flyers
-
-#     panda_pcomp = dict(panda.pcomp.children())["1"]
-#     panda_pulser = dict(panda.pulse.children())["1"]
-
-#     det_exp_setup = StandardTriggerSetup(
-#         num_frames=num_images,
-#         exposure_time=exposure_time,
-#         software_trigger=False,
-#     )
-
-#     yield from bps.mv(panda_pulser.pulses, num_images)
-#     yield from bps.mv(panda_pulser.step, acquire_period)
-#     yield from bps.mv(detector.drv.acquire_time, exposure_time)
-#     yield from bps.mv(detector.drv.acquire_period, acquire_period / 2)
-#     yield from bps.mv(panda_pulser.width, exposure_time / 5)
-
-
-#     _md = {    
-#         "detectors": [det.name for det in detectors],
-#         "num_points": num_images,
-#         "plan_name": "pilatus_flyscan",
-#         "hints": {},
-#     }
-#     yield from bps.open_run(md=_md)
-
-
-#     for detector in detectors:
-#         if hasattr(detector.writer.hdf, "queue_size"):
-#             yield from bps.mv(detector.writer.hdf.queue_size, num_images * 2)
-
-#     # Stage All!
-#     yield from bps.stage_all(*all_detectors)
-
-#     # Set HDF plugin numcapture to num_images
-#     yield from bps.mv(detector.writer.hdf.num_capture, num_images)
-
-#     assert pilatus_flyer._trigger_logic.state == StandardTriggerState.stopping
-#     yield from bps.prepare(pilatus_flyer, det_exp_setup, wait=True)
-#     for pilatus_det in detectors:
-#         yield from bps.prepare(
-#             pilatus_det, pilatus_flyer.trigger_logic.trigger_info(det_exp_setup), wait=True
-#         )
-
-#     assert panda_flyer._trigger_logic.state == StandardTriggerState.stopping
-#     yield from bps.prepare(panda_flyer, det_exp_setup, wait=True)
-#     yield from bps.prepare(
-#         panda, panda_flyer.trigger_logic.trigger_info(num_images), wait=True
-#     )
-
-#     for flyer_or_det in all_detectors:
-#         yield from bps.kickoff(flyer_or_det)
-
-#     print("Completing...")
-#     for flyer_or_det in all_detectors:
-#         yield from bps.complete(flyer_or_det, group="complete_all")
-
-#     # Wait for completion of file saving for the Kinetix detectors and the PandA
-#     done = False
-#     while not done:
-#         try:
-#             yield from bps.wait(group="complete_all", timeout=2.0)
-#         except TimeoutError:
-#             pass
-#         else:
-#             done = True
-
-#     panda_stream_name = f"{panda.name}_stream"
-#     yield from bps.declare_stream(panda, name=panda_stream_name)
-
-#     yield from bps.collect(
-#         panda,
-#         # stream=True,
-#         # return_payload=False,
-#         name=panda_stream_name,
-#     )
-
-#     yield from bps.unstage_all(*panda_detectors_and_flyers)
-
-#     detector_stream_name = f"{detector.name}_stream"
-#     yield from bps.declare_stream(detector, name=detector_stream_name)
-
-#     yield from bps.collect(
-#         detector,
-#         # stream=True,
-#         # return_payload=False,
-#         name=detector_stream_name,
-#     )
-#     yield from bps.sleep(0.1)
-
-#     yield from bps.unstage_all(*pilatus_detectors_and_flyers)
-
-#     yield from bps.close_run()
-    
-#     print("====================================================")
-#     print("====================================================\n\n")
-#     print(f"Completed pilatus flyscan scan with scan number: {RE.md['scan_id']}.\n")
-#     print("====================================================")
-#     print("====================================================\n\n")
-
-
-
-#     # Print out number of points captured by each detector
-#     captured = {}
-#     captured[panda.name] = yield from bps.rd(panda.data.num_captured)
-#     for kinetix_det in detectors:
-#         captured[kinetix_det.name] = yield from bps.rd(kinetix_det.writer.hdf.num_captured)
-    
-#     print("Number frames captured:\n")
-#     for cap in captured.keys():
-#         print(f"    {cap:15}: {captured[cap]}")
-
-
-
-
 
 file_loading_timer.stop_timer(__file__)

@@ -107,16 +107,16 @@ RE.subscribe(tw)
 #     #username=None
 # )
 
-# def logout():
-#     """
-#     Logout of tiled and reset the default username.
-#     This is needed to switch between different users.
-#     """
+def logout():
+    """
+    Logout of tiled and reset the default username.
+    This is needed to switch between different users.
+    """
 
-#     c.logout()
+    c.logout()
 
-#     from tiled.client.context import clear_default_identity
-#     clear_default_identity(c.context.api_uri)
+    from tiled.client.context import clear_default_identity
+    clear_default_identity(c.context.api_uri)
 
 # db = Broker(c)
 
@@ -216,7 +216,7 @@ def print_docs(name, doc):
     print("============================")
 
 
-#RE.subscribe(print_docs)
+RE.subscribe(print_docs)
 
 def reset_scan_id(scan_id=0):
     """A fake plan to reset the scan_id via qserver."""

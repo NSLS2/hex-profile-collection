@@ -19,16 +19,13 @@ from ophyd import Component as Cpt
 from ophyd import Device, EpicsMotor, EpicsPathSignal, EpicsSignal, EpicsSignalWithRBV
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
-    DetectorControl,
     DetectorTrigger,
     DetectorWriter,
     SignalRW,
     TriggerInfo,
-    TriggerLogic,
 )
 from ophyd_async.core import AsyncStatus
 from ophyd_async.core import StandardDetector
-from ophyd_async.core import DeviceCollector
 from ophyd_async.fastcs.panda import HDFPanda
 
 # class HEXPandaHDFWriter(PandaHDFWriter):
@@ -43,14 +40,10 @@ from ophyd_async.fastcs.panda import HDFPanda
 #         return desc
 
 
-panda_trigger_logic = StandardTriggerLogic(trigger_mode=DetectorTrigger.constant_gate)
-panda_flyer = StandardFlyer(panda_trigger_logic, [], name="panda_flyer")
-
-
 def connect_to_panda(panda_id):
 
     print(f"Connecting to Panda {panda_id}...")
-    with DeviceCollector():
+    with init_devices():
         panda_path_provider = ProposalNumYMDPathProvider(default_filename_provider)
         panda = HDFPanda(
             f"XF:27ID1-ES{{PANDA:{panda_id}}}:",
@@ -64,50 +57,5 @@ def connect_to_panda(panda_id):
 
 
 panda1 = connect_to_panda(1)
-
-
-def panda_fly(panda, num=724):
-    yield from bps.stage_all(panda, panda_flyer)
-    yield from bps.prepare(panda_flyer, num, wait=True)
-    yield from bps.prepare(
-        panda, panda_flyer.trigger_logic.trigger_info(num), wait=True
-    )
-
-    detector = panda
-    # detector.controller.disarm.assert_called_once  # type: ignore
-
-    yield from bps.open_run()
-
-    yield from bps.kickoff(panda_flyer)
-    yield from bps.kickoff(detector)
-
-    yield from bps.complete(panda_flyer, wait=True, group="complete")
-    yield from bps.complete(detector, wait=True, group="complete")
-
-    # Manually incremenet the index as if a frame was taken
-    # detector.writer.index += 1
-
-    done = False
-    while not done:
-        try:
-            yield from bps.wait(group="complete", timeout=0.5)
-        except TimeoutError:
-            pass
-        else:
-            done = True
-        yield from bps.collect(
-            panda,
-            # stream=False,
-            # return_payload=False,
-            name="main_stream",
-        )
-        yield from bps.sleep(0.01)
-    yield from bps.wait(group="complete")
-    val = yield from bps.rd(panda.data.num_captured)
-    print(f"{val = }")
-    yield from bps.close_run()
-
-    yield from bps.unstage_all(panda_flyer, panda)
-
 
 file_loading_timer.stop_timer(__file__)

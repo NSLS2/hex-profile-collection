@@ -43,7 +43,7 @@ from ophyd_async.fastcs.panda import HDFPanda
 def connect_to_panda(panda_id):
 
     print(f"Connecting to Panda {panda_id}...")
-    with init_devices():
+    with init_devices(mock=RUNNING_IN_NSLS2_CI):
         panda_path_provider = ProposalNumYMDPathProvider(default_filename_provider)
         panda = HDFPanda(
             f"XF:27ID1-ES{{PANDA:{panda_id}}}:",

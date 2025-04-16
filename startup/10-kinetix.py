@@ -44,7 +44,7 @@ class HEXKinetixDetector(KinetixDetector):
 def connect_to_kinetix(kinetix_id):
 
     print(f"Connecting to kinetix {kinetix_id}...")
-    with init_devices():
+    with init_devices(mock=RUNNING_IN_NSLS2_CI):
         kinetix_path_provider = ProposalNumYMDPathProvider(default_filename_provider)
         kinetix = HEXKinetixDetector(
             f"XF:27ID1-BI{{Kinetix-Det:{kinetix_id}}}",

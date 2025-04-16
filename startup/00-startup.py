@@ -27,6 +27,8 @@ from ophyd.signal import EpicsSignalBase
 from redis_json_dict import RedisJSONDict
 from tiled.client import from_uri
 
+RUNNING_IN_NSLS2_CI = os.environ["NSLS2_PROFILE_CI"] == "YES"
+
 # warnings.filterwarnings("ignore")
 
 plt.ion()

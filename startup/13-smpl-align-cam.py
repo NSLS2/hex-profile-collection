@@ -3,7 +3,7 @@ file_loading_timer.start_timer(__file__)
 from ophyd_async.epics import advimba
 
 try:
-    with init_devices():
+    with init_devices(mock=RUNNING_IN_NSLS2_CI):
         vimba_path_provider = ProposalNumYMDPathProvider(default_filename_provider)
         smpl_align_cam = advimba.VimbaDetector(
             "XF:27ID1-ES{Sample-Cam:1}",

@@ -562,6 +562,12 @@ existing_devices:
     is_movable: false
     is_readable: true
     module: __main__
+  kinetix3:
+    classname: HEXKinetixDetector
+    is_flyable: true
+    is_movable: false
+    is_readable: true
+    module: __main__
   kinetix_flyer:
     classname: StandardFlyer
     is_flyable: true

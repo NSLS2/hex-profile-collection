@@ -308,6 +308,11 @@ def tomo_flyscan(
     # Move rotation axis to the stop position + the lead angle:
     movement_status = tomo_rot_axis.set(stop_deg + lead_angle, wait=False)
 
+    current_pos = yield from bps.rd(tomo_rot_axis)
+    while(current_pos < start_deg):
+        yield from bps.sleep(0.1)
+        current_pos = yield from bps.rd(tomo_rot_axis)
+
     print("Completing...")
     yield from bps.collect_while_completing(all_detectors, all_detectors, flush_period=1, stream_name="tomo")
     yield from bps.unstage_all(*all_detectors)

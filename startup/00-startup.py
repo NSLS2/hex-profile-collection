@@ -27,7 +27,9 @@ from ophyd.signal import EpicsSignalBase
 from redis_json_dict import RedisJSONDict
 from tiled.client import from_uri
 
-RUNNING_IN_NSLS2_CI = os.environ["NSLS2_PROFILE_CI"] == "YES"
+# RUNNING_IN_NSLS2_CI = os.environ["NSLS2_PROFILE_CI"] == "YES"
+# RUNNING_IN_NSLS2_CI = os.environ["NSLS2_PROFILE_CI"] == False
+RUNNING_IN_NSLS2_CI = False
 
 # warnings.filterwarnings("ignore")
 
@@ -218,7 +220,7 @@ def print_docs(name, doc):
     print("============================")
 
 
-RE.subscribe(print_docs)
+#RE.subscribe(print_docs)
 
 def reset_scan_id(scan_id=0):
     """A fake plan to reset the scan_id via qserver."""

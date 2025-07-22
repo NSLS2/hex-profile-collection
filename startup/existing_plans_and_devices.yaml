@@ -2558,7 +2558,7 @@ existing_plans:
       name: min_step
     - annotation:
         type: float
-      description: largest step for slow-chaning regions
+      description: largest step for slow-changing regions
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -3488,6 +3488,14 @@ existing_plans:
         name: KEYWORD_ONLY
         value: 3
       name: group
+    - annotation:
+        type: typing.Optional[float]
+      default: None
+      description: Specify a maximum time that the move(s) can be waited for.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: timeout
     - description: passed to obj.set()
       kind:
         name: VAR_KEYWORD
@@ -3540,6 +3548,14 @@ existing_plans:
         name: KEYWORD_ONLY
         value: 3
       name: group
+    - annotation:
+        type: typing.Optional[float]
+      default: None
+      description: Specify a maximum time that the move(s) can be waited for.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: timeout
     - description: passed to obj.set()
       kind:
         name: VAR_KEYWORD
@@ -3568,6 +3584,14 @@ existing_plans:
         name: KEYWORD_ONLY
         value: 3
       name: group
+    - annotation:
+        type: typing.Optional[float]
+      default: None
+      description: Specify a maximum time that the move(s) can be waited for.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: timeout
     - description: passed to obj.set()
       kind:
         name: VAR_KEYWORD
@@ -3597,6 +3621,14 @@ existing_plans:
         name: KEYWORD_ONLY
         value: 3
       name: group
+    - annotation:
+        type: typing.Optional[float]
+      default: None
+      description: Specify a maximum time that the move(s) can be waited for.
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: timeout
     - description: passed to obj.set()
       kind:
         name: VAR_KEYWORD
@@ -4011,14 +4043,14 @@ existing_plans:
       name: motor
     - annotation:
         type: float
-      description: starting position of motor
+      description: starting position of motor, relative to the current position.
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: start
     - annotation:
         type: float
-      description: ending position of motor
+      description: ending position of motor, relative to the current position.
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -4032,7 +4064,7 @@ existing_plans:
       name: min_step
     - annotation:
         type: float
-      description: largest step for slow-chaning regions
+      description: largest step for slow-changing regions
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -4691,14 +4723,14 @@ existing_plans:
       name: motor
     - annotation:
         type: float
-      description: starting position of motor
+      description: starting position of motor, relative to the current position.
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: start
     - annotation:
         type: float
-      description: ending position of motor
+      description: ending position of motor, relative to the current position.
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -4712,7 +4744,7 @@ existing_plans:
       name: min_step
     - annotation:
         type: float
-      description: largest step for slow-chaning regions
+      description: largest step for slow-changing regions
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -6084,20 +6116,6 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: num_dark_images
-    properties:
-      is_generator: true
-  tomo_progress_bar:
-    module: __main__
-    name: tomo_progress_bar
-    parameters:
-    - kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: target
-    - kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: kinetix_detector
     properties:
       is_generator: true
   tomo_y_scan_loop:

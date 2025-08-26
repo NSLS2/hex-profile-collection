@@ -67,3 +67,6 @@ history*.sqlite
 
 # Ignore development requirements files
 *-dev.txt
+# pixi environments
+.pixi/*
+!.pixi/config.toml

@@ -27,10 +27,11 @@ ply = ">=3.11,<4"
 colorlog = ">=6.9.0,<7"
 epicscorelibs = "*"
 pydantic-numpy = "*"
+hextools = ">=0.2.3,<0.3"
 
 
 [feature.profile.pypi-dependencies]
-ophyd-async = { version = ">=0.9.0, <0.10", extras = ["ca", "pva"] }
+ophyd-async = { version = ">=0.10.0", extras = ["ca", "pva"] }
 
 
 [feature.qs.dependencies]

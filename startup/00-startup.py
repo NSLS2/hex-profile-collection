@@ -119,8 +119,6 @@ def logout():
 
     c.logout()
 
-    from tiled.client.context import clear_default_identity
-    clear_default_identity(c.context.api_uri)
 
 # db = Broker(c)
 

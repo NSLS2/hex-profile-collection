@@ -69,7 +69,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-kafka-0.10.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-queueserver-0.0.22-pyhd8ed1ab_2.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-queueserver-api-0.0.12-pyhd8ed1ab_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-tiled-plugins-2.0.0b65-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-tiled-plugins-2.0.0b68-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/bokeh-3.7.3-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/boltons-25.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/brotli-1.1.0-hb9d3cd8_3.conda
@@ -107,7 +107,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/cytoolz-1.0.1-py312h66e93f0_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-2025.7.0-pyhe01879c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-core-2025.7.0-pyhe01879c_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/databroker-2.0.0b64-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/databroker-2.0.0b67-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/dav1d-1.2.1-hd590300_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/dbus-1.16.2-h3c4dab8_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/debugpy-1.8.16-py312h8285ef7_0.conda
@@ -653,7 +653,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-base-1.14.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-kafka-0.10.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-queueserver-0.0.22-pyhd8ed1ab_2.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-tiled-plugins-2.0.0b65-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-tiled-plugins-2.0.0b68-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/bokeh-3.7.3-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/boltons-25.0.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/brotli-1.1.0-hb9d3cd8_3.conda
@@ -691,7 +691,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/cytoolz-1.0.1-py312h66e93f0_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-2025.7.0-pyhe01879c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/dask-core-2025.7.0-pyhe01879c_1.conda
-      - conda: https://conda.anaconda.org/conda-forge/noarch/databroker-2.0.0b64-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/databroker-2.0.0b67-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/dav1d-1.2.1-hd590300_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/dbus-1.16.2-h3c4dab8_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/debugpy-1.8.16-py312h8285ef7_0.conda
@@ -2032,13 +2032,13 @@ packages:
   - pkg:pypi/bluesky-queueserver-api?source=hash-mapping
   size: 78314
   timestamp: 1747612811568
-- conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-tiled-plugins-2.0.0b65-pyhd8ed1ab_0.conda
-  sha256: 19d376748d5b1255f51d4df2dd40c3481053ec0e006256bba3adb397cefb635c
-  md5: 601f2210809acaabff9802ee6ece8716
+- conda: https://conda.anaconda.org/conda-forge/noarch/bluesky-tiled-plugins-2.0.0b68-pyhd8ed1ab_0.conda
+  sha256: f29af4ef0e41799f03895a190a12899ba854a6fda5bb45ea306c0d96054f357d
+  md5: b9867949642b57d1013bfc80e33b0b9a
   depends:
   - dask-core
   - mongoquery
-  - python >=3.9
+  - python >=3.10
   - pytz
   - tiled >=0.1.0b4
   - tzlocal
@@ -2046,8 +2046,8 @@ packages:
   license_family: BSD
   purls:
   - pkg:pypi/bluesky-tiled-plugins?source=hash-mapping
-  size: 24283
-  timestamp: 1755167712682
+  size: 24367
+  timestamp: 1756431274760
 - conda: https://conda.anaconda.org/conda-forge/noarch/bokeh-3.7.3-pyhd8ed1ab_0.conda
   sha256: dd116a77a5aca118cfdfcc97553642295a3fb176a4e741fd3d1363ee81cebdfd
   md5: 708d2f99b8a2c833ff164a225a265e76
@@ -2554,9 +2554,9 @@ packages:
   - pkg:pypi/dask?source=hash-mapping
   size: 1058723
   timestamp: 1752524171028
-- conda: https://conda.anaconda.org/conda-forge/noarch/databroker-2.0.0b64-pyhd8ed1ab_0.conda
-  sha256: 23e81cb24b3fb6f27e70861e6659031e30f9f419a602048488e0f414b75eec18
-  md5: 9117d26142325e1dc4163464b6990f34
+- conda: https://conda.anaconda.org/conda-forge/noarch/databroker-2.0.0b67-pyhd8ed1ab_0.conda
+  sha256: 7fcfab8f7f4114b0d1151c59a31f35f745371a6c9cca20e1ef84e02f40f4d2c5
+  md5: 3320cd35ed5141cae232f78c47b5cccc
   depends:
   - area-detector-handlers
   - bluesky-tiled-plugins
@@ -2577,12 +2577,12 @@ packages:
   - pims
   - pydantic
   - pymongo
-  - python >=3.9
+  - python >=3.10
   - pytz
   - requests
   - starlette
   - suitcase-mongo >=0.6.0
-  - tiled >=0.1.0b27
+  - tiled >=0.1.0b36
   - tiled-client
   - tiled-server
   - toolz
@@ -2591,8 +2591,8 @@ packages:
   license_family: BSD
   purls:
   - pkg:pypi/databroker?source=hash-mapping
-  size: 141378
-  timestamp: 1749573945219
+  size: 141792
+  timestamp: 1756403549482
 - conda: https://conda.anaconda.org/conda-forge/linux-64/dav1d-1.2.1-hd590300_0.conda
   sha256: 22053a5842ca8ee1cf8e1a817138cdb5e647eb2c46979f84153f6ad7bde73020
   md5: 418c6ca5929a611cbd69204907a83995

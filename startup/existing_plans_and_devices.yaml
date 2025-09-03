@@ -5984,6 +5984,11 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: num_images
+    - default: '0.0'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: acquire_period
     - default: None
       kind:
         name: POSITIONAL_OR_KEYWORD
@@ -6018,7 +6023,7 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: lead_angle
-    - default: '30'
+    - default: '10'
       description: speed of the rotary motor during reset movements, in deg/s
       kind:
         name: POSITIONAL_OR_KEYWORD
@@ -6035,6 +6040,186 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: sample_name
+    properties:
+      is_generator: true
+  tomo_grid_scan:
+    module: __main__
+    name: tomo_grid_scan
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: exposure_time
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: dark_flat_offset
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: num_projections
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: x_motion_start
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: x_motion_stop
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: x_motion_step
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: y_motion_start
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: y_motion_stop
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: y_motion_step
+    - default: '0.0'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: acquire_period
+    - default: None
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: panda
+    - default: None
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: detectors
+    - default: 'True'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: time_trigger
+    - default: '0'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: start_deg
+    - default: '180'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: stop_deg
+    - default: '10'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: lead_angle
+    - default: '10'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: reset_speed
+    - default: 'True'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: use_shutter
+    - default: '50'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: num_flat_images
+    - default: '20'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: num_dark_images
+    properties:
+      is_generator: true
+  tomo_grid_scan_no_dark_flat:
+    module: __main__
+    name: tomo_grid_scan_no_dark_flat
+    parameters:
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: exposure_time
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: num_projections
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: x_motion_start
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: x_motion_stop
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: x_motion_step
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: y_motion_start
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: y_motion_stop
+    - kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: y_motion_step
+    - default: '0.0'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: acquire_period
+    - default: None
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: panda
+    - default: None
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: detectors
+    - default: 'True'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: time_trigger
+    - default: '0'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: start_deg
+    - default: '180'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: stop_deg
+    - default: '10'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: lead_angle
+    - default: '10'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: reset_speed
+    - default: 'True'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: use_shutter
     properties:
       is_generator: true
   tomo_loop:
@@ -6096,7 +6281,7 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: lead_angle
-    - default: '30'
+    - default: '10'
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -6146,6 +6331,11 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: y_motion_step
+    - default: '0.0'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: acquire_period
     - default: None
       kind:
         name: POSITIONAL_OR_KEYWORD
@@ -6181,7 +6371,7 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: lead_angle
-    - default: '30'
+    - default: '10'
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1

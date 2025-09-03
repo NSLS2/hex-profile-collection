@@ -9,13 +9,13 @@ ZERO_OFFSET = 39660
 from ophyd_async.epics.adkinetix import KinetixReadoutMode
 
 DETECTOR_MAX_FRAMERATES = {
-    KinetixReadoutMode.SENSITIVITY: 80,
+    KinetixReadoutMode.SENSITIVITY: 50,
     KinetixReadoutMode.SPEED: 250,
     KinetixReadoutMode.DYNAMIC_RANGE: 75,
 }
 
 
-TOMO_ROTARY_STAGE_VELO_RESET_MAX = 30
+TOMO_ROTARY_STAGE_VELO_RESET_MAX = 10
 TOMO_ROTARY_STAGE_VELO_SCAN_MAX = 60
 
 
@@ -40,18 +40,69 @@ def software_flyscan(detectors: list[StandardDetector], num_images: int, exposur
 
     trigger_info = TriggerInfo(
         number_of_triggers=num_images,
-        trigger=DetectorTrigger.INTERNAL,
+        trigger=DetectorTrigger.EDGE_TRIGGER,
         livetime=exposure_time,
+        deadtime=0.005,
     )
     for det in detectors:
         yield from bps.prepare(det, trigger_info, wait=True)
 
     yield from bps.declare_stream(*detectors, name=stream_name)
 
+    yield from bps.mv(
+        panda1.bits.a, 0,
+        wait=True
+    )
+
+    yield from bps.mv(
+        panda1.bits.b, 0,
+        wait=True
+    )
+
+    yield from bps.mv(
+        panda1.bits.a, 0,
+        wait=True
+    )
+
+    yield from bps.mv(
+        panda1.bits.b, 0,
+        wait=True
+    )
+
+
     yield from bps.kickoff_all(*detectors, wait=True)
-    yield from bps.complete_all(*detectors, wait=True)
-    for det in detectors:
-        yield from bps.collect(det, name=stream_name)
+    yield from bps.mv(
+        panda1.pulse[2].pulses, num_images,
+        panda1.pulse[2].step, exposure_time + 0.1,
+        panda1.pulse[2].width, exposure_time / 2,
+        wait=True,
+    )
+
+    yield from bps.mv(
+        panda1.bits.a, 1,
+        wait=True,
+    )
+
+    yield from bps.mv(
+        panda1.bits.b, 1,
+        wait=True,
+    )
+
+    yield from bps.mv(
+        panda1.bits.a, 1,
+        wait=True,
+    )
+
+    yield from bps.mv(
+        panda1.bits.b, 1,
+        wait=True,
+    )
+
+    # yield from bps.complete_all(*detectors, wait=True)
+    # for det in detectors:
+    #     yield from bps.collect(det, name=stream_name)
+
+    yield from bps.collect_while_completing(detectors, detectors, flush_period=1, stream_name=stream_name)
 
     yield from bps.unstage_all(*detectors)
 
@@ -122,6 +173,16 @@ def tomo_dark_flat(
 
     yield from bps.close_run()
 
+    yield from bps.mv(
+        panda1.bits.b, 0,
+        wait=True
+    )
+    yield from bps.mv(
+        panda1.bits.a, 0,
+        wait=True
+    )
+   
+
     # Move sample back:
     yield from bps.movr(sample_tower.axis_x1, -offset)
 
@@ -147,6 +208,7 @@ def home_rotation_stage():
 def tomo_flyscan(
     exposure_time,
     num_images,
+    acquire_period=0.0,
     panda=None,
     detectors=None,
     time_trigger=True,
@@ -200,13 +262,16 @@ def tomo_flyscan(
     if mtr_reset_vel > TOMO_ROTARY_STAGE_VELO_RESET_MAX:
         mtr_reset_vel = TOMO_ROTARY_STAGE_VELO_RESET_MAX
 
-    scan_time = (num_images - 1) * (exposure_time + overhead)
+    if (acquire_period  + overhead) < exposure_time or acquire_period == 0.0:
+        acquire_period = exposure_time + overhead
+
+    scan_time = (num_images - 1) * acquire_period
     rot_motor_vel = (stop_deg - start_deg) / scan_time
     if rot_motor_vel > TOMO_ROTARY_STAGE_VELO_SCAN_MAX:
         rot_motor_vel = TOMO_ROTARY_STAGE_VELO_SCAN_MAX
         scan_time = abs(stop_deg - start_deg) / rot_motor_vel
 
-    step_time = scan_time / (num_images - 1)
+    step_time = acquire_period
 
     framerate = 1 / step_time
 
@@ -239,7 +304,7 @@ def tomo_flyscan(
     panda_trigger_info = TriggerInfo(
         number_of_triggers=num_images,
         trigger=DetectorTrigger.CONSTANT_GATE,
-        livetime=exposure_time,
+        livetime=acquire_period,
         deadtime=0.0001,
     )
 
@@ -404,6 +469,7 @@ def tomo_y_scan_loop(
         y_motion_start,
         y_motion_stop,
         y_motion_step,
+        acquire_period=0.0,
         panda=None,
         detectors=None,
         skip_tomo_num=-1,
@@ -423,9 +489,9 @@ def tomo_y_scan_loop(
 
     yield from bps.mv(sample_tower.vertical_y, y_motion_start)
 
-    yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
+    #yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
 
-    num_steps = int(abs(y_motion_start - y_motion_stop) / abs(y_motion_step))
+    num_steps = int(abs(y_motion_start - y_motion_stop) / abs(y_motion_step)) + 1
     last_step = abs(y_motion_start - y_motion_stop) % abs(y_motion_step)
     print(f"Your last step will be {last_step}, since the y_step did not divide evenly.")
 
@@ -441,6 +507,7 @@ def tomo_y_scan_loop(
         yield from tomo_flyscan(
             exposure_time,
             num_projections,
+            acquire_period=acquire_period,
             panda=panda,
             detectors=detectors,
             time_trigger=time_trigger,
@@ -452,19 +519,186 @@ def tomo_y_scan_loop(
         )
 
         # Sleep to wait for file saving to complete
-        yield from bps.movr(sample_tower.vertical_y, abs(y_motion_step) * direction)
+        if i < num_steps -1:
+            yield from bps.movr(sample_tower.vertical_y, abs(y_motion_step) * direction)
 
         if skip_tomo_num > 0:
             scan_countdown -= 1
 
-            if scan_countdown == 0:
-                print("Taking dark, flat...")
-                yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
-                scan_countdown = skip_tomo_num        
+            #if scan_countdown == 0:
+            #    print("Taking dark, flat...")
+            #    yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
+            #    scan_countdown = skip_tomo_num        
 
 
-    yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
+    #yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
 
     yield from bps.mv(sample_tower.vertical_y, pre_scan_position)
+
+
+def tomo_grid_scan(
+    exposure_time,
+    dark_flat_offset,
+    num_projections,
+    x_motion_start,
+    x_motion_stop,
+    x_motion_step,
+    y_motion_start,
+    y_motion_stop,
+    y_motion_step,
+    acquire_period=0.0,
+    panda=None,
+    detectors=None,
+    time_trigger=True,
+    start_deg=0,
+    stop_deg=180,
+    lead_angle=10,
+    reset_speed=TOMO_ROTARY_STAGE_VELO_RESET_MAX,
+    use_shutter=True,
+    num_flat_images = 50,
+    num_dark_images = 20,     
+):
+
+    pre_scan_position_x = sample_tower.axis_x1.user_readback.get()
+    pre_scan_position_y = sample_tower.vertical_y.user_readback.get()
+
+    yield from bps.mv(
+        sample_tower.vertical_y, y_motion_start,
+    )
+
+    num_y_steps = int(abs(y_motion_start - y_motion_stop) / abs(y_motion_step)) + 1    
+    num_x_steps = int(abs(x_motion_start - x_motion_stop) / abs(x_motion_step)) + 1
+
+    if y_motion_start > y_motion_stop:
+        y_direction = -1
+    else:
+        y_direction = 1
+
+    if x_motion_start > x_motion_stop:
+        x_direction = -1
+    else:
+        x_direction = 1
+
+    last_y_step = y_motion_start + y_direction * abs(num_y_steps * y_motion_step)
+    last_x_step = x_motion_start + x_direction * abs(num_x_steps * x_motion_step)
+    print(f"Your last y step will be {last_y_step}, since the y_step did not divide evenly.")
+    print(f"Your last x step will be {last_x_step}, since the x_step did not divide evenly.")
+
+
+    for i in range(num_y_steps):
+
+        yield from bps.mv(sample_tower.axis_x1, x_motion_start)
+
+        print(f"Taking dark, flat for row w/ y position {sample_tower.vertical_y.user_readback.get()}")
+        yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
+
+        for j in range(num_x_steps):
+
+            print(f"Executing tomo flyscan iteration y step: {i+1}, x step {j+1}...")
+        
+            yield from tomo_flyscan(
+                exposure_time,
+                num_projections,
+                acquire_period=acquire_period,
+                panda=panda,
+                detectors=detectors,
+                time_trigger=time_trigger,
+                start_deg=start_deg,
+                stop_deg=stop_deg,
+                lead_angle=lead_angle,
+                reset_speed=reset_speed,
+                use_shutter=use_shutter,
+            )
+            if j < num_x_steps -1:
+                yield from bps.movr(sample_tower.axis_x1, abs(x_motion_step) * x_direction)
+
+        if i < num_y_steps -1: 
+            yield from bps.movr(sample_tower.vertical_y, abs(y_motion_step) * y_direction)
+
+
+    yield from bps.mv(
+        sample_tower.vertical_y, pre_scan_position_y,
+        sample_tower.axis_x1, pre_scan_position_x
+    )
+
+
+
+def tomo_grid_scan_no_dark_flat(
+    exposure_time,
+    num_projections,
+    x_motion_start,
+    x_motion_stop,
+    x_motion_step,
+    y_motion_start,
+    y_motion_stop,
+    y_motion_step,
+    acquire_period=0.0,
+    panda=None,
+    detectors=None,
+    time_trigger=True,
+    start_deg=0,
+    stop_deg=180,
+    lead_angle=10,
+    reset_speed=TOMO_ROTARY_STAGE_VELO_RESET_MAX,
+    use_shutter=True,
+):
+
+    pre_scan_position_x = sample_tower.axis_x1.user_readback.get()
+    pre_scan_position_y = sample_tower.vertical_y.user_readback.get()
+
+    yield from bps.mv(
+        sample_tower.vertical_y, y_motion_start,
+    )
+
+    num_y_steps = int(abs(y_motion_start - y_motion_stop) / abs(y_motion_step)) + 1    
+    num_x_steps = int(abs(x_motion_start - x_motion_stop) / abs(x_motion_step)) + 1
+
+    if y_motion_start > y_motion_stop:
+        y_direction = -1
+    else:
+        y_direction = 1
+
+    if x_motion_start > x_motion_stop:
+        x_direction = -1
+    else:
+        x_direction = 1
+
+    last_y_step = y_motion_start + y_direction * abs(num_y_steps * y_motion_step)
+    last_x_step = x_motion_start + x_direction * abs(num_x_steps * x_motion_step)
+    print(f"Your last y step will be {last_y_step}, since the y_step did not divide evenly.")
+    print(f"Your last x step will be {last_x_step}, since the x_step did not divide evenly.")
+
+
+    for i in range(num_y_steps):
+        yield from bps.mv(sample_tower.axis_x1, x_motion_start)
+        for j in range(num_x_steps):
+
+            print(f"Executing tomo flyscan iteration y step: {i+1}, x step {j+1}...")
+        
+            yield from tomo_flyscan(
+                exposure_time,
+                num_projections,
+                acquire_period=acquire_period,
+                panda=panda,
+                detectors=detectors,
+                time_trigger=time_trigger,
+                start_deg=start_deg,
+                stop_deg=stop_deg,
+                lead_angle=lead_angle,
+                reset_speed=reset_speed,
+                use_shutter=use_shutter,
+            )
+            if j < num_x_steps -1:
+                yield from bps.movr(sample_tower.axis_x1, abs(x_motion_step) * x_direction)
+
+        if i < num_y_steps -1: 
+            yield from bps.movr(sample_tower.vertical_y, abs(y_motion_step) * y_direction)
+
+
+    yield from bps.mv(
+        sample_tower.vertical_y, pre_scan_position_y,
+        sample_tower.axis_x1, pre_scan_position_x
+    )
+
 
 file_loading_timer.stop_timer(__file__)

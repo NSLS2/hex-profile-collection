@@ -49,26 +49,12 @@ def software_flyscan(detectors: list[StandardDetector], num_images: int, exposur
 
     yield from bps.declare_stream(*detectors, name=stream_name)
 
-    yield from bps.mv(
-        panda1.bits.a, 0,
-        wait=True
-    )
-
-    yield from bps.mv(
-        panda1.bits.b, 0,
-        wait=True
-    )
+    yield from bps.sleep(1.0)
 
     yield from bps.mv(
         panda1.bits.a, 0,
         wait=True
     )
-
-    yield from bps.mv(
-        panda1.bits.b, 0,
-        wait=True
-    )
-
 
     yield from bps.kickoff_all(*detectors, wait=True)
     yield from bps.mv(
@@ -78,26 +64,13 @@ def software_flyscan(detectors: list[StandardDetector], num_images: int, exposur
         wait=True,
     )
 
-    yield from bps.mv(
-        panda1.bits.a, 1,
-        wait=True,
-    )
-
-    yield from bps.mv(
-        panda1.bits.b, 1,
-        wait=True,
-    )
+    yield from bps.sleep(1.0)
 
     yield from bps.mv(
         panda1.bits.a, 1,
         wait=True,
     )
-
-    yield from bps.mv(
-        panda1.bits.b, 1,
-        wait=True,
-    )
-
+    
     # yield from bps.complete_all(*detectors, wait=True)
     # for det in detectors:
     #     yield from bps.collect(det, name=stream_name)

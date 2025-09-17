@@ -757,6 +757,12 @@ existing_devices:
     is_movable: false
     is_readable: true
     module: ophyd_async.fastcs.panda._hdf_panda
+  pe1:
+    classname: HEXPerkinElmer
+    is_flyable: false
+    is_movable: false
+    is_readable: true
+    module: __main__
   ph_close_cmd:
     classname: EpicsSignal
     is_flyable: false
@@ -3844,7 +3850,7 @@ existing_plans:
     properties:
       is_generator: true
   prepare:
-    description: Prepare a device.
+    description: Prepare a device ready for trigger or kickoff.
     module: bluesky.plan_stubs
     name: prepare
     parameters:

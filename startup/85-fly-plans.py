@@ -15,7 +15,7 @@ DETECTOR_MAX_FRAMERATES = {
 }
 
 
-TOMO_ROTARY_STAGE_VELO_RESET_MAX = 10
+TOMO_ROTARY_STAGE_VELO_RESET_MAX = 30
 TOMO_ROTARY_STAGE_VELO_SCAN_MAX = 60
 
 
@@ -283,11 +283,14 @@ def tomo_flyscan(
 
     # Make it fast to move to the start position:
     yield from bps.mv(tomo_rot_axis.velocity, reset_speed)
+
+    # Move to start position to read encoder value    
+    yield from bps.mv(tomo_rot_axis, start_deg)
+    start_encoder = yield from bps.rd(panda.calc[2].out)
+    # Move to lead angle    
     yield from bps.mv(tomo_rot_axis, start_deg - lead_angle)
     # Set the velocity for the scan:
     yield from bps.mv(tomo_rot_axis.velocity, rot_motor_vel)
-    start_encoder = start_deg * COUNTS_PER_DEG - ZERO_OFFSET
-
     # Set up the pcomp block
     yield from bps.mv(panda_pcomp.start, int(start_encoder))
 

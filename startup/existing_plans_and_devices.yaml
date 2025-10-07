@@ -5948,12 +5948,12 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: offset
-    - default: None
+    - default: '[''kinetix1'']'
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: detectors
-    - default: '20'
+    - default: '50'
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -5990,26 +5990,6 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: num_images
-    - default: '0.0'
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: acquire_period
-    - default: None
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: panda
-    - default: None
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: detectors
-    - default: 'True'
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: time_trigger
     - default: '0'
       description: starting point in degrees
       kind:
@@ -6029,23 +6009,38 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: lead_angle
-    - default: '10'
-      description: speed of the rotary motor during reset movements, in deg/s
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: reset_speed
     - default: 'True'
       description: whether to use/check the shutter during the scan
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: use_shutter
+    - default: '[''kinetix1'']'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: detectors
     - default: None
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: sample_name
+    - default: '0.0'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: acquire_period
+    - default: 'True'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: time_trigger
+    - default: '30'
+      description: speed of the rotary motor during reset movements, in deg/s
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: reset_speed
     properties:
       is_generator: true
   tomo_grid_scan:
@@ -6097,11 +6092,6 @@ existing_plans:
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
-      name: panda
-    - default: None
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
       name: detectors
     - default: 'True'
       kind:
@@ -6123,7 +6113,7 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: lead_angle
-    - default: '10'
+    - default: '30'
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -6216,7 +6206,7 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: lead_angle
-    - default: '10'
+    - default: '30'
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -6252,26 +6242,6 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: pause_time
-    - default: None
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: panda
-    - default: None
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: detectors
-    - default: '-1'
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: skip_tomo_num
-    - default: 'True'
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: time_trigger
     - default: '0'
       kind:
         name: POSITIONAL_OR_KEYWORD
@@ -6287,16 +6257,6 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: lead_angle
-    - default: '10'
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: reset_speed
-    - default: 'True'
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: use_shutter
     - default: '50'
       kind:
         name: POSITIONAL_OR_KEYWORD
@@ -6307,6 +6267,36 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: num_dark_images
+    - default: '-1'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: skip_tomo_num
+    - default: 'True'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: time_trigger
+    - default: 'True'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: use_shutter
+    - default: '[''kinetix1'']'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: detectors
+    - default: '0.0'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: acquire_period
+    - default: '30'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: reset_speed
     properties:
       is_generator: true
   tomo_y_scan_loop:
@@ -6317,10 +6307,6 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: exposure_time
-    - kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: dark_flat_offset
     - kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -6337,31 +6323,11 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: y_motion_step
-    - default: '0.0'
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: acquire_period
-    - default: None
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: panda
-    - default: None
+    - default: '[''kinetix1'']'
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: detectors
-    - default: '-1'
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: skip_tomo_num
-    - default: 'True'
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: time_trigger
     - default: '0'
       kind:
         name: POSITIONAL_OR_KEYWORD
@@ -6377,7 +6343,12 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: lead_angle
-    - default: '10'
+    - default: '0.0'
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: acquire_period
+    - default: '30'
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -6387,16 +6358,11 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: use_shutter
-    - default: '50'
+    - default: 'True'
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
-      name: num_flat_images
-    - default: '20'
-      kind:
-        name: POSITIONAL_OR_KEYWORD
-        value: 1
-      name: num_dark_images
+      name: time_trigger
     properties:
       is_generator: true
   trigger:

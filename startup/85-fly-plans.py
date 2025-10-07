@@ -84,14 +84,14 @@ def software_flyscan(detectors: list[StandardDetector], num_images: int, exposur
 def tomo_dark_flat(
     exposure_time,
     offset,
-    detectors=None,
-    dark_images=20,
+    detectors=["kinetix1"],
+    dark_images=50,
     flat_images=50,
     use_shutter=True,
     md=None,
 ):
 
-    if detectors is None:
+    if detectors is None or detectors == ["kinetix1"]:
         detectors = [kinetix1]
 
     if use_shutter:
@@ -181,16 +181,15 @@ def home_rotation_stage():
 def tomo_flyscan(
     exposure_time,
     num_images,
-    acquire_period=0.0,
-    panda=None,
-    detectors=None,
-    time_trigger=True,
     start_deg=0,
     stop_deg=180,
-    lead_angle=10,
-    reset_speed=TOMO_ROTARY_STAGE_VELO_RESET_MAX,
-    use_shutter=True,
+    lead_angle=10,    
+    use_shutter=True,    
+    detectors=["kinetix1"],
     sample_name=None,
+    acquire_period=0.0,
+    time_trigger=True,
+    reset_speed=TOMO_ROTARY_STAGE_VELO_RESET_MAX,
 ):
     """Simple hardware triggered flyscan tomography
 
@@ -214,10 +213,10 @@ def tomo_flyscan(
 
 
     overhead = 0.005
-    if panda is None:
-        panda = panda1
+    
+    panda = panda1
 
-    if detectors is None:
+    if detectors is None or detectors == ["kinetix1"]:
         detectors = [kinetix1]
 
     if use_shutter:
@@ -321,7 +320,7 @@ def tomo_flyscan(
     _md.update({"tomo_scanning_mode": ScanType.tomo_flyscan.value})
     yield from bps.open_run(md=_md)
 
-    print(f"Executing tomography scan with number number: {RE.md['scan_id']}...\n")
+    print(f"\n\nExecuting tomography scan with number number: {RE.md['scan_id']}...\n")
 
     for det in detectors:
         det._writer._path_provider._filename_provider.set_frame_type(
@@ -388,17 +387,17 @@ def tomo_loop(
         dark_flat_offset,
         num_projections,
         pause_time,
-        panda=None,
-        detectors=None,
-        skip_tomo_num=-1,
-        time_trigger=True,
         start_deg=0,
         stop_deg=180,
         lead_angle=10,
-        reset_speed=TOMO_ROTARY_STAGE_VELO_RESET_MAX,
-        use_shutter=True,
         num_flat_images = 50,
         num_dark_images = 20,
+        skip_tomo_num=-1,
+        time_trigger=True,
+        use_shutter=True,
+        detectors=["kinetix1"],
+        acquire_period=0.0,
+        reset_speed=TOMO_ROTARY_STAGE_VELO_RESET_MAX,
     ):
 
     scan_countdown = skip_tomo_num
@@ -411,15 +410,15 @@ def tomo_loop(
         
         yield from tomo_flyscan(
             exposure_time,
-            num_projections,
-            panda=panda,
-            detectors=detectors,
-            time_trigger=time_trigger,
+            num_projections,            
             start_deg=start_deg,
             stop_deg=stop_deg,
+            use_shutter=use_shutter,
+            detectors=detectors,
+            time_trigger=time_trigger,
             lead_angle=lead_angle,
             reset_speed=reset_speed,
-            use_shutter=use_shutter,
+            acquire_period=acquire_period
         )
 
         # Sleep to wait for file saving to complete
@@ -440,32 +439,25 @@ def tomo_loop(
 
 def tomo_y_scan_loop(
         exposure_time,
-        dark_flat_offset,
         num_projections,
         y_motion_start,
         y_motion_stop,
         y_motion_step,
-        acquire_period=0.0,
-        panda=None,
-        detectors=None,
-        skip_tomo_num=-1,
-        time_trigger=True,
+        detectors=["kinetix1"],
         start_deg=0,
         stop_deg=180,
         lead_angle=10,
+        acquire_period=0.0,
         reset_speed=TOMO_ROTARY_STAGE_VELO_RESET_MAX,
         use_shutter=True,
-        num_flat_images = 50,
-        num_dark_images = 20,
+        time_trigger=True,
     ):
-
-    scan_countdown = skip_tomo_num
 
     pre_scan_position = sample_tower.vertical_y.user_readback.get()
 
     yield from bps.mv(sample_tower.vertical_y, y_motion_start)
 
-    #yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
+    # yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
 
     num_steps = int(abs(y_motion_start - y_motion_stop) / abs(y_motion_step)) + 1
     last_step = abs(y_motion_start - y_motion_stop) % abs(y_motion_step)
@@ -483,8 +475,7 @@ def tomo_y_scan_loop(
         yield from tomo_flyscan(
             exposure_time,
             num_projections,
-            acquire_period=acquire_period,
-            panda=panda,
+            acquire_period=acquire_period,            
             detectors=detectors,
             time_trigger=time_trigger,
             start_deg=start_deg,
@@ -498,8 +489,8 @@ def tomo_y_scan_loop(
         if i < num_steps -1:
             yield from bps.movr(sample_tower.vertical_y, abs(y_motion_step) * direction)
 
-        if skip_tomo_num > 0:
-            scan_countdown -= 1
+        # if skip_tomo_num > 0:
+        #     scan_countdown -= 1
 
             #if scan_countdown == 0:
             #    print("Taking dark, flat...")
@@ -507,7 +498,7 @@ def tomo_y_scan_loop(
             #    scan_countdown = skip_tomo_num        
 
 
-    #yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
+    # yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
 
     yield from bps.mv(sample_tower.vertical_y, pre_scan_position)
 
@@ -522,8 +513,7 @@ def tomo_grid_scan(
     y_motion_start,
     y_motion_stop,
     y_motion_step,
-    acquire_period=0.0,
-    panda=None,
+    acquire_period=0.0,    
     detectors=None,
     time_trigger=True,
     start_deg=0,
@@ -575,8 +565,7 @@ def tomo_grid_scan(
             yield from tomo_flyscan(
                 exposure_time,
                 num_projections,
-                acquire_period=acquire_period,
-                panda=panda,
+                acquire_period=acquire_period,                
                 detectors=detectors,
                 time_trigger=time_trigger,
                 start_deg=start_deg,
@@ -608,8 +597,7 @@ def tomo_grid_scan_no_dark_flat(
     y_motion_start,
     y_motion_stop,
     y_motion_step,
-    acquire_period=0.0,
-    panda=None,
+    acquire_period=0.0,    
     detectors=None,
     time_trigger=True,
     start_deg=0,
@@ -654,8 +642,7 @@ def tomo_grid_scan_no_dark_flat(
             yield from tomo_flyscan(
                 exposure_time,
                 num_projections,
-                acquire_period=acquire_period,
-                panda=panda,
+                acquire_period=acquire_period,                
                 detectors=detectors,
                 time_trigger=time_trigger,
                 start_deg=start_deg,

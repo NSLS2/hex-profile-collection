@@ -1,4 +1,4 @@
-[project]
+[workspace]
 channels = ["conda-forge"]
 name = "hex-profile-collection"
 platforms = ["linux-64"]

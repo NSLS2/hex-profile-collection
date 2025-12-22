@@ -16,17 +16,15 @@ file_loading_timer.start_timer(__file__)
 #         )
 
 import dataclasses
-from datetime import date
 import uuid
+from datetime import date
 
-from ophyd_async.core import UUIDFilenameProvider, YMDPathProvider, PathInfo
+from ophyd_async.core import PathInfo, UUIDFilenameProvider, YMDPathProvider
 
 
 class ProposalNumYMDPathProvider(YMDPathProvider):
 
-    def __init__(
-        self, filename_provider, use_default=False, **kwargs
-    ):
+    def __init__(self, filename_provider, use_default=False, **kwargs):
 
         self._use_default = use_default
         super().__init__(filename_provider, HEX_PROPOSAL_DIR_ROOT, **kwargs)
@@ -37,8 +35,8 @@ class ProposalNumYMDPathProvider(YMDPathProvider):
         # RE.md['cycle'] -> 2024-2
         # RE.md['proposal'] -> 'pass-123456'
         cycle = RE.md["cycle"]
-        if 'Beamline Commissioning' in RE.md['proposal']['type']:
-            cycle = 'commissioning'
+        if "Beamline Commissioning" in RE.md["proposal"]["type"]:
+            cycle = "commissioning"
 
         proposal_assets = (
             self._base_directory_path / cycle / RE.md["data_session"] / "assets"
@@ -60,12 +58,15 @@ class ProposalNumYMDPathProvider(YMDPathProvider):
                 current_date,
             )
 
-        final_dir_path = proposal_assets / ymd_dir_path / f"scan_{str(RE.md['scan_id']).zfill(5)}"
-
+        final_dir_path = (
+            proposal_assets / ymd_dir_path / f"scan_{str(RE.md['scan_id']).zfill(5)}"
+        )
 
         filename = self._filename_provider(device_name=device_name)
 
-        return PathInfo(directory_path=final_dir_path, filename=filename, create_dir_depth=-4)
+        return PathInfo(
+            directory_path=final_dir_path, filename=filename, create_dir_depth=-4
+        )
 
 
 # class ScanIDDirectoryProvider(UUIDDirectoryProvider):

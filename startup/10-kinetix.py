@@ -16,8 +16,8 @@ from ophyd_async.core import (
     SignalRW,
     TriggerInfo,
 )
-from ophyd_async.epics.adkinetix import KinetixDetector
 from ophyd_async.epics.adcore import ADHDFWriter
+from ophyd_async.epics.adkinetix import KinetixDetector
 
 
 class HEXADHDFWriter(ADHDFWriter):
@@ -56,6 +56,7 @@ def connect_to_kinetix(kinetix_id):
     print("Done.")
 
     return kinetix
+
 
 try:
     kinetix1 = connect_to_kinetix(1)

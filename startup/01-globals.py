@@ -8,14 +8,14 @@ from enum import Enum
 from ophyd import EpicsSignalRO
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
+    AsyncStatus,
     DetectorTrigger,
     DetectorWriter,
-    init_devices,
     SignalRW,
+    StandardDetector,
     TriggerInfo,
+    init_devices,
 )
-from ophyd_async.core import AsyncStatus
-from ophyd_async.core import StandardDetector
 
 HEX_PROPOSAL_DIR_ROOT = "/nsls2/data/hex/proposals"
 

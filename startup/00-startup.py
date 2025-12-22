@@ -111,6 +111,7 @@ RE.subscribe(tw)
 #     #username=None
 # )
 
+
 def logout():
     """
     Logout of tiled and reset the default username.
@@ -208,8 +209,11 @@ def show_env():
     b = a.split("\n")
     print(b[0].split("/")[-1][:-1])
 
+
 from ophyd_async.core import config_ophyd_async_logging
+
 config_ophyd_async_logging()
+
 
 def print_docs(name, doc):
     print("============================")
@@ -218,7 +222,8 @@ def print_docs(name, doc):
     print("============================")
 
 
-#RE.subscribe(print_docs)
+# RE.subscribe(print_docs)
+
 
 def reset_scan_id(scan_id=0):
     """A fake plan to reset the scan_id via qserver."""

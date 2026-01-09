@@ -20,12 +20,6 @@ TOMO_ROTARY_STAGE_VELO_RESET_MAX = 30
 TOMO_ROTARY_STAGE_VELO_SCAN_MAX = 60
 
 
-# def close_shutter():
-#     """Close the shutter after the scan."""
-#     yield from bps.mv(ph_shutter, "Close")
-#     yield from bps.sleep(2)
-
-
 def post_tomo_fly_cleanup():
     """Cleanup to perform at the end of every flyscan"""
 
@@ -267,14 +261,14 @@ def tomo_flyscan(
     #    )
 
     det_trigger_info = TriggerInfo(
-        number_of_triggers=num_images,
+        number_of_events=num_images,
         trigger=DetectorTrigger.EDGE_TRIGGER,
         livetime=exposure_time,
         deadtime=0.001,
     )
 
     panda_trigger_info = TriggerInfo(
-        number_of_triggers=num_images,
+        number_of_events=num_images,
         trigger=DetectorTrigger.CONSTANT_GATE,
         livetime=acquire_period,
         deadtime=0.0001,

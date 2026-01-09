@@ -17,7 +17,7 @@ from ophyd_async.core import (
     init_devices,
 )
 
-HEX_PROPOSAL_DIR_ROOT = "/nsls2/data/hex/proposals"
+HEX_PROPOSAL_DIR_ROOT = Path("/nsls2/data/hex/proposals")
 
 
 class ScanType(Enum):

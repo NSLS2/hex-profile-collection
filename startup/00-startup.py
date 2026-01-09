@@ -174,7 +174,8 @@ bec.disable_baseline()
 
 runengine_metadata_dir = Path("/nsls2/data/hex/shared/config/runengine-metadata")
 
-RE.md = RedisJSONDict(redis.Redis("info.hex.nsls2.bnl.gov", 6379), prefix="")
+RE.md = {"data_session": "pass-318988", "cycle": "2026-1"}
+#RE.md = RedisJSONDict(redis.Redis("info.hex.nsls2.bnl.gov", 6379), prefix="")
 
 
 # Optional: set any metadata that rarely changes.

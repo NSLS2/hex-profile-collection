@@ -35,28 +35,21 @@ class ProposalNumYMDPathProvider(YMDPathProvider):
         # RE.md['cycle'] -> 2024-2
         # RE.md['proposal'] -> 'pass-123456'
         cycle = RE.md["cycle"]
-        if "Beamline Commissioning" in RE.md["proposal"]["type"]:
+        if "Beamline Commissioning" in RE.md.get("proposal", {}).get("type", ""):
             cycle = "commissioning"
 
         proposal_assets = (
             self._base_directory_path / cycle / RE.md["data_session"] / "assets"
         )
-        sep = os.path.sep
-        current_date = date.today().strftime(f"%Y")
+        current_date = Path(date.today().strftime(f"%Y"))
         if device_name is None:
             ymd_dir_path = current_date
         elif device_name == "pilatus_det":
-            ymd_dir_path = os.path.join("default", current_date)
+            ymd_dir_path = Path("default") / current_date
         elif self._device_name_as_base_dir:
-            ymd_dir_path = os.path.join(
-                current_date,
-                device_name,
-            )
+            ymd_dir_path = current_date / device_name
         else:
-            ymd_dir_path = os.path.join(
-                device_name,
-                current_date,
-            )
+            ymd_dir_path = device_name / current_date
 
         final_dir_path = (
             proposal_assets / ymd_dir_path / f"scan_{str(RE.md['scan_id']).zfill(5)}"

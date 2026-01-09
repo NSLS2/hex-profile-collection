@@ -54,7 +54,7 @@ class ProposalIDPrompt(Prompts):
         ]
 
 
-if is_re_worker_active():
+if not is_re_worker_active():
     ip = get_ipython()
     ip.prompts = ProposalIDPrompt(ip)
 

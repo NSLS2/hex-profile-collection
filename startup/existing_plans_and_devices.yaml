@@ -2783,6 +2783,14 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: stream_name
+    - annotation:
+        type: collections.abc.Sequence[str]
+      default: ()
+      description: Additional groups to monitor while collecting from flyers.
+      kind:
+        name: POSITIONAL_OR_KEYWORD
+        value: 1
+      name: watch
     properties:
       is_generator: false
   complete:
@@ -5948,7 +5956,7 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: offset
-    - default: '[''kinetix1'']'
+    - default: None
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -6015,7 +6023,7 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: use_shutter
-    - default: '[''kinetix1'']'
+    - default: None
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -6277,7 +6285,7 @@ existing_plans:
         name: POSITIONAL_OR_KEYWORD
         value: 1
       name: use_shutter
-    - default: '[''kinetix1'']'
+    - default: None
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -6317,8 +6325,8 @@ existing_plans:
     - kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
-      name: y_motion_step
-    - default: '[''kinetix1'']'
+      name: number_of_scans
+    - default: None
       kind:
         name: POSITIONAL_OR_KEYWORD
         value: 1
@@ -6663,6 +6671,17 @@ existing_plans:
         name: KEYWORD_ONLY
         value: 3
       name: error_on_timeout
+    - annotation:
+        type: collections.abc.Sequence[str]
+      default: ()
+      description: 'Additional groups to monitor while waiting for the primary group.
+        Raises an exception if any watched group
+
+        fails.'
+      kind:
+        name: KEYWORD_ONLY
+        value: 3
+      name: watch
     properties:
       is_generator: false
   wait_for:

@@ -26,6 +26,12 @@ from nslsii import configure_base, configure_kafka_publisher
 from ophyd.signal import EpicsSignalBase
 from redis_json_dict import RedisJSONDict
 from tiled.client import from_uri
+try:
+    from bluesky_queueserver import is_re_worker_active
+except ImportError:
+    # TODO: delete this when 'bluesky_queueserver' is distributed as part of collection environment
+    def is_re_worker_active():
+        return False
 
 # RUNNING_IN_NSLS2_CI = os.environ["NSLS2_PROFILE_CI"] == "YES"
 # RUNNING_IN_NSLS2_CI = os.environ["NSLS2_PROFILE_CI"] == False
@@ -48,8 +54,9 @@ class ProposalIDPrompt(Prompts):
         ]
 
 
-ip = get_ipython()
-ip.prompts = ProposalIDPrompt(ip)
+if is_re_worker_active():
+    ip = get_ipython()
+    ip.prompts = ProposalIDPrompt(ip)
 
 
 class FileLoadingTimer:

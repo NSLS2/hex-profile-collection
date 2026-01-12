@@ -271,7 +271,7 @@ edxd = EDXD("XF:27IDF-OP:1{EDXD:1-Ax:", name="edxd")
 theta = edxd.axis_rx
 
 # sd (SuppelementalData) is an attribute of RE, defined in the nslsii.__init__().
-sd.baseline += [getattr(mca1_motors, m) for m in mca1_motors.component_names]
+# sd.baseline += [getattr(mca1_motors, m) for m in mca1_motors.component_names]
 
 
 fe_shutter_status = EpicsSignalRO(

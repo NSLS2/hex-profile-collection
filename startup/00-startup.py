@@ -26,6 +26,11 @@ from nslsii import configure_base, configure_kafka_publisher
 from ophyd.signal import EpicsSignalBase
 from redis_json_dict import RedisJSONDict
 from tiled.client import from_uri
+
+import bluesky.plan_stubs as bps
+
+from nslsii.re_subs import BlueskyDocJSONWriter, BlueskyDocStreamPrinter
+
 try:
     from bluesky_queueserver import is_re_worker_active
 except ImportError:
@@ -88,35 +93,45 @@ EpicsSignalBase.set_defaults(timeout=10, connection_timeout=10)
 #                publish_documents_with_kafka=True,
 #                pbar=True)
 
-configure_base(
-    get_ipython().user_ns,
-    Broker.named("temp"),
-    pbar=True,
-    bec=True,
-    magics=True,
-    mpl=True,
-    epics_context=False,
-    publish_documents_with_kafka=False,
-)
+# configure_base(
+#     get_ipython().user_ns,
+#     Broker.named("temp"),
+#     pbar=True,
+#     bec=True,
+#     magics=True,
+#     mpl=True,
+#     epics_context=False,
+#     publish_documents_with_kafka=False,
+# )
 
 # event_loop = asyncio.get_event_loop()
 # RE = RunEngine(loop=event_loop)
 RE = RunEngine()
-RE.subscribe(bec)
-RE.preprocessors.append(sd)
+# RE.subscribe(bec)
+# RE.preprocessors.append(sd)
 
 tiled_writing_client = from_uri(
     "https://tiled.nsls2.bnl.gov/api/v1/metadata/hex/raw",
     api_key=os.environ["TILED_BLUESKY_WRITING_API_KEY_HEX"],
 )
-tw = TiledWriter(tiled_writing_client)
+
+class TiledWriterWPrint(TiledWriter):
+    bluesky_doc_stream_printer = BlueskyDocStreamPrinter()
+    def __call__(self, *args):
+        self.bluesky_doc_stream_printer(*args)
+        super().__call__(*args)
+
+# tw = TiledWriter(tiled_writing_client)
+tw = TiledWriterWPrint(tiled_writing_client)
 RE.subscribe(tw)
 
-# c = tiled_reading_client = from_uri(
-#     "https://tiled.nsls2.bnl.gov/api/v1/metadata/hex/raw",
-#     include_data_sources=True,
-#     #username=None
-# )
+c = None
+if not is_re_worker_active():
+    c = tiled_reading_client = from_uri(
+        "https://tiled.nsls2.bnl.gov/api/v1/metadata/hex/raw",
+        include_data_sources=True,
+        #username=None
+    )
 
 
 def logout():
@@ -125,41 +140,13 @@ def logout():
     This is needed to switch between different users.
     """
 
+    if c is None:
+        raise RuntimeError("Tiled reading client not initialized!")
     c.logout()
 
 
-# db = Broker(c)
-
-import json
-
-
-class JSONWriter:
-    """Writer for a JSON array"""
-
-    def __init__(self, filepath):
-        self.file = open(filepath, "w")
-        self.file.write("[\n")
-
-    def __call__(self, name, doc):
-        json.dump({"name": name, "doc": doc}, self.file, default=str)
-        if name == "stop":
-            self.file.write("\n]")
-            self.file.close()
-        else:
-            self.file.write(",\n")
-
-
-def now():
-    return datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-
-
-jlw = JSONWriter(f"/tmp/export-docs-{now()}.json")
-
-
-# wr = JSONWriter('/tmp/test.json')
-# RE.subscribe(wr)
-
-# RE.subscribe(print)
+jw = BlueskyDocJSONWriter()
+RE.subscribe(jw)
 
 configure_kafka_publisher(RE, beamline_name="hex")
 
@@ -168,17 +155,18 @@ if not is_re_worker_active():
     get_ipython().run_line_magic("autoawait", "call_in_bluesky_event_loop")
 
 # PandA does not produce any data for plots for now.
-bec.disable_plots()
-bec.disable_table()
-bec.disable_baseline()
+# bec.disable_plots()
+# bec.disable_table()
+# bec.disable_baseline()
 
-runengine_metadata_dir = Path("/nsls2/data/hex/shared/config/runengine-metadata")
+# runengine_metadata_dir = Path("/nsls2/data/hex/shared/config/runengine-metadata")
 
-RE.md = {"data_session": "pass-318988", "cycle": "2026-1"}
+# TODO: Revert back to real redis
+RE.md = {"data_session": "pass-318988", "cycle": "2026-1", "tiled_access_tags": ["pass-318988"]}
 #RE.md = RedisJSONDict(redis.Redis("info.hex.nsls2.bnl.gov", 6379), prefix="")
 
 
-# Optional: set any metadata that rarely changes.
+# Set some metadata that never changes.
 RE.md["facility"] = "NSLS-II"
 RE.md["group"] = "HEX"
 RE.md["beamline_id"] = "27-ID-1"
@@ -209,29 +197,9 @@ def warmup_hdf5_plugins(detectors):
             )
 
 
-def show_env():
-    # this is not guaranteed to work as you can start IPython without hacking
-    # the path via activate
-    proc = subprocess.Popen(["conda", "list"], stdout=subprocess.PIPE)
-    out, err = proc.communicate()
-    a = out.decode("utf-8")
-    b = a.split("\n")
-    print(b[0].split("/")[-1][:-1])
-
-
 from ophyd_async.core import config_ophyd_async_logging
 
 config_ophyd_async_logging()
-
-
-def print_docs(name, doc):
-    print("============================")
-    print(f"{name = }")
-    print(f"{doc = }")
-    print("============================")
-
-
-# RE.subscribe(print_docs)
 
 
 def reset_scan_id(scan_id=0):

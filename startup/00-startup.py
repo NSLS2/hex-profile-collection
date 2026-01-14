@@ -115,14 +115,8 @@ tiled_writing_client = from_uri(
     api_key=os.environ["TILED_BLUESKY_WRITING_API_KEY_HEX"],
 )
 
-class TiledWriterWPrint(TiledWriter):
-    bluesky_doc_stream_printer = BlueskyDocStreamPrinter()
-    def __call__(self, *args):
-        self.bluesky_doc_stream_printer(*args)
-        super().__call__(*args)
 
-# tw = TiledWriter(tiled_writing_client)
-tw = TiledWriterWPrint(tiled_writing_client)
+tw = TiledWriter(tiled_writing_client)
 RE.subscribe(tw)
 
 c = None
@@ -162,39 +156,14 @@ if not is_re_worker_active():
 # runengine_metadata_dir = Path("/nsls2/data/hex/shared/config/runengine-metadata")
 
 # TODO: Revert back to real redis
-RE.md = {"data_session": "pass-318988", "cycle": "2026-1", "tiled_access_tags": ["pass-318988"]}
-#RE.md = RedisJSONDict(redis.Redis("info.hex.nsls2.bnl.gov", 6379), prefix="")
+# RE.md = {"data_session": "pass-318988", "cycle": "2026-1", "tiled_access_tags": ["pass-318988"]}
+RE.md = RedisJSONDict(redis.Redis("info.hex.nsls2.bnl.gov", 6379), prefix="")
 
 
 # Set some metadata that never changes.
 RE.md["facility"] = "NSLS-II"
 RE.md["group"] = "HEX"
 RE.md["beamline_id"] = "27-ID-1"
-
-
-def warmup_hdf5_plugins(detectors):
-    """
-    Warm-up the hdf5 plugins.
-    This is necessary for when the corresponding IOC restarts we have to trigger one image
-    for the hdf5 plugin to work correctly, else we get file writing errors.
-    Parameter:
-    ----------
-    detectors: list
-    """
-    for det in detectors:
-        _array_size = det.hdf5.array_size.get()
-        if 0 in [_array_size.height, _array_size.width] and hasattr(det, "hdf5"):
-            print(
-                f"\n  Warming up HDF5 plugin for {det.name} as the array_size={_array_size}..."
-            )
-            det.hdf5.warmup()
-            print(
-                f"  Warming up HDF5 plugin for {det.name} is done. array_size={det.hdf5.array_size.get()}\n"
-            )
-        else:
-            print(
-                f"\n  Warming up of the HDF5 plugin is not needed for {det.name} as the array_size={_array_size}."
-            )
 
 
 from ophyd_async.core import config_ophyd_async_logging

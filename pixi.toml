@@ -55,6 +55,25 @@ numpy = ">2"
 start = "unset SESSION_MANAGER PYTHONPATH && MPLBACKEND=qtagg ipython --profile-dir=."
 pvs = "ipython --profile-dir=. -c 'get_pv_types(); exit()'"
 
+[feature.qsgui.dependencies]
+bluesky-widgets = ">=0.0.17,<0.0.18"
+pyqt = ">=5.15.11,<6"
+qtpy = ">=2.4.3,<3"
+bluesky-httpserver = ">=0.0.12,<0.0.13"
+
+[feature.qsgui.tasks]
+qserver-gui = "queue-monitor --http-server-uri https://xf27id1-hex-qs1.nsls2.bnl.gov:443"
+
+[feature.linter.dependencies]
+pre-commit = ">=4.5.1,<5"
+ruff = ">=0.14.12,<0.15"
+
+
+[feature.linter.tasks]
+lint = "pre-commit run --all-files"
+
 [environments]
 terminal = {features=["profile", "terminal"], solve-group="profile"}
 qs = {features=["profile", "qs"], solve-group="profile"}
+qsgui = {features=["qsgui"], solve-group="qsgui"}
+linter = {features=["linter"], solve-group="linter"}

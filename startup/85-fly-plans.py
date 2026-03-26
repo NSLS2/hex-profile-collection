@@ -20,6 +20,12 @@ TOMO_ROTARY_STAGE_VELO_RESET_MAX = 30
 TOMO_ROTARY_STAGE_VELO_SCAN_MAX = 60
 
 
+# def close_shutter():
+#     """Close the shutter after the scan."""
+#     yield from bps.mv(ph_shutter, "Close")
+#     yield from bps.sleep(2)
+
+
 def post_tomo_fly_cleanup():
     """Cleanup to perform at the end of every flyscan"""
 
@@ -39,7 +45,7 @@ def software_flyscan(
     yield from bps.stage_all(*detectors)
 
     trigger_info = TriggerInfo(
-        number_of_triggers=num_images,
+        number_of_events=num_images,
         trigger=DetectorTrigger.EDGE_TRIGGER,
         livetime=exposure_time,
         deadtime=0.005,
@@ -504,6 +510,7 @@ def tomo_y_scan_loop(
         #    print("Taking dark, flat...")
         #    yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
         #    scan_countdown = skip_tomo_num
+
     # yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
     yield from bps.mv(sample_tower.vertical_y, pre_scan_position)
 

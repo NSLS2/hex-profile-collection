@@ -18,7 +18,8 @@ import nslsii
 import ophyd.signal
 import redis
 from bluesky.callbacks.broker import post_run, verify_files_saved
-from bluesky.callbacks.tiled_writer import TiledWriter
+# from bluesky.callbacks.tiled_writer import TiledWriter
+from bluesky_tiled_plugins import TiledWriter
 from bluesky.run_engine import RunEngine, call_in_bluesky_event_loop
 from databroker.v0 import Broker
 from IPython import get_ipython

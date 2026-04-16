@@ -66,4 +66,5 @@ def save_image(file_path, mat, overwrite=True):
         raise ValueError("Couldn't write to file {}".format(file_path))
     return file_path
 
+
 file_loading_timer.stop_timer(__file__)

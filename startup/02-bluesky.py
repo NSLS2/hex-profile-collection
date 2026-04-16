@@ -6,7 +6,10 @@ from bluesky.plans import count
 from nslsii.ad33 import SingleTriggerV33, StatsPluginV33
 from ophyd import Component as Cpt
 from ophyd import EpicsSignal, EpicsSignalRO, Kind, Signal
-from ophyd.areadetector import AreaDetector, CamBase
+from ophyd.areadetector import (
+    AreaDetector,
+    CamBase,
+)
 from ophyd.areadetector import EpicsSignalWithRBV as SignalWithRBV
 from ophyd.areadetector import (
     ImagePlugin,

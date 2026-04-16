@@ -17,14 +17,13 @@ from ophyd.sim import new_uid
 from ophyd.status import SubscriptionStatus
 from PIL import Image
 
-
 # Intialize the GeRM detector ophyd object
 germ_detector = HEXGeRMDetectorHDF5(
     "XF:27ID1-ES{GeRM-Det:1}",
     name="germ",
     root_dir="/nsls2/data/hex/proposals",
     md=RE.md,
-    date_template="%Y"
+    date_template="%Y",
 )
 
 germ_detector.frame_shape.kind = Kind.omitted

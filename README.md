@@ -2,7 +2,7 @@
 
 ## Conda environment
 
-Requires `2024-2.3-py311-tiled` conda environment, with overlays w/ non-tagged source installs of ophyd-async, bluesky, hextools, 
+Requires `2024-2.3-py311-tiled` conda environment, with overlays w/ non-tagged source installs of ophyd-async, bluesky, hextools,
 
 ### Update on 5/15/24:
 

@@ -19,13 +19,13 @@ from ophyd import Component as Cpt
 from ophyd import Device, EpicsMotor, EpicsPathSignal, EpicsSignal, EpicsSignalWithRBV
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
+    AsyncStatus,
     DetectorTrigger,
     DetectorWriter,
     SignalRW,
+    StandardDetector,
     TriggerInfo,
 )
-from ophyd_async.core import AsyncStatus
-from ophyd_async.core import StandardDetector
 from ophyd_async.fastcs.panda import HDFPanda
 
 # class HEXPandaHDFWriter(PandaHDFWriter):

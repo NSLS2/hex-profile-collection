@@ -3,10 +3,11 @@ file_loading_timer.start_timer(__file__)
 
 def example_plan(motor, list_of_positions):
 
-#    for pos in list_of_positions:
-#        yield from mv(motor, pos)
-#        yield from count([germanium_detector])
+    #    for pos in list_of_positions:
+    #        yield from mv(motor, pos)
+    #        yield from count([germanium_detector])
     yield from bp.list_scan([germ_detector], motor, list_of_positions)
+
 
 def example_plan_2():
     yield from example_plan()
@@ -86,7 +87,6 @@ def sweep_motion(detector, count_time, motor, start, stop, max_moves=1000, md=No
         },
         "theta": round(theta.user_readback.get(), 3),
         "tomo_scanning_mode": ScanType.edxd.value,
-
     }
     _md.update(md)
 
@@ -124,7 +124,9 @@ def sweep_motion(detector, count_time, motor, start, stop, max_moves=1000, md=No
 
     return (yield from bpp.finalize_wrapper(inner(), final_plan()))
 
+
 def sleep_for_secs(seconds):
     yield from bps.sleep(seconds)
+
 
 file_loading_timer.stop_timer(__file__)

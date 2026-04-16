@@ -92,18 +92,18 @@ class TomoRotaryStageHoming(Device):
                 return True
             else:
                 return False
-        
-        status = SubscriptionStatus(self.home_status, run=False, callback=wait_for_home_done)
+
+        status = SubscriptionStatus(
+            self.home_status, run=False, callback=wait_for_home_done
+        )
         self.home_cmd.put(value)
-        
+
         return status
 
 
 class TomoRotaryStage(Device):
     rotary_axis = Cpt(EpicsMotorWithDescription, "Ax:4}Mtr")
     home = Cpt(TomoRotaryStageHoming, "Ax:4}")
-
-
 
 
 tomo_rotary_stage = TomoRotaryStage("XF:27IDF-OP:1{MC:5-", name="tomo_rotary_stage")
@@ -199,7 +199,7 @@ MCF4_MOTORS = [
     "XF:27IDF-OP:1{SMPL:1-Ax:Y}Mtr.RBV",
     "XF:27IDF-OP:1{SMPL:1-Ax:Rz}Mtr.RBV",
     "XF:27IDF-OP:1{SMPL:1-Ax:X1}Mtr.RBV",
-    "XF:27IDF-OP:1{SMPL:1-Ax:Z1}Mtr.RBV",    
+    "XF:27IDF-OP:1{SMPL:1-Ax:Z1}Mtr.RBV",
     "XF:27IDF-OP:1{SMPL:1-Ax:Y1}Mtr.RBV",
     "XF:27IDF-OP:1{SMPL:1-Ax:Y2}Mtr.RBV",
     "XF:27IDF-OP:1{SMPL:1-Ax:Y3}Mtr.RBV"]
@@ -207,7 +207,7 @@ MCF4_MOTORS = [
 MCF5_MOTORS = [
     "XF:27IDF-OP:1{SMPL:1-Ax:Z2}Mtr.RBV",
     "XF:27IDF-OP:1{SMPL:1-Ax:X2}Mtr.RBV",
-    "XF:27IDF-OP:1{MC:5-Ax:4}Mtr.RBV",    
+    "XF:27IDF-OP:1{MC:5-Ax:4}Mtr.RBV",
     "XF:27IDF-OP:1{EDXD:1-Ax:X}Mtr.RBV",
     "XF:27IDF-OP:1{EDXD:1-Ax:Y}Mtr.RBV",
     "XF:27IDF-OP:1{EDXD:1-Ax:Z}Mtr.RBV",
@@ -240,7 +240,7 @@ MCF8_MOTORS = [
     "XF:27IDF-OP:1{OPT:1-Ax:ObjSel}Mtr.RBV",
     "XF:27IDF-OP:1{OPT:1-Ax:Focus2}Mtr.RBV",
     "XF:27IDF-OP:1{OPT:1-Ax:Focus1}Mtr.VAL",
-    "XF:27IDF-OP:1{OPT:2-Ax:Focus}Mtr.VAL",    
+    "XF:27IDF-OP:1{OPT:2-Ax:Focus}Mtr.VAL",
     "XF:27IDF-OP:1{OPT:2-Ax:CamRot}Mtr.VAL",
     "XF:27IDF-OP:1{SMPL:1-Ax:Ry1}Mtr.RBV"]
 
@@ -271,7 +271,7 @@ edxd = EDXD("XF:27IDF-OP:1{EDXD:1-Ax:", name="edxd")
 theta = edxd.axis_rx
 
 # sd (SuppelementalData) is an attribute of RE, defined in the nslsii.__init__().
-sd.baseline += [getattr(mca1_motors, m) for m in mca1_motors.component_names]
+# sd.baseline += [getattr(mca1_motors, m) for m in mca1_motors.component_names]
 
 
 fe_shutter_status = EpicsSignalRO(
@@ -284,12 +284,12 @@ fe_shutter_status = EpicsSignalRO(
 
 #     RETRY_PERIOD = 2.0
 #     MAX_ATTEMPTS = 10
-    
+
 #     def stop(self, *, success=False):
 #         pass
 
 
-#ph_shutter = HEXTwoButtonShutter("XF:27IDA-PPS{L1-S1}", name="ph_shutter")
+# ph_shutter = HEXTwoButtonShutter("XF:27IDA-PPS{L1-S1}", name="ph_shutter")
 ph_shutter_status = EpicsSignalRO(
     "XF:27IDA-PPS{L1-S1}Pos-Sts", name="ph_shutter_status", string=False
 )
@@ -300,6 +300,7 @@ ph_close_cmd = EpicsSignal(
     "XF:27IDA-PPS{L1-S1}Cmd:Cls-Cmd", name="ph_shutter_close", string=False
 )
 
+
 # The two button shutter class does not seem to agree with HEX's photon shutter.
 # Potentially because of a minor EPS alarm state in the open position?
 # For now just actuating the signals and waiting for a few seconds seems to be more reliable.
@@ -308,6 +309,7 @@ def open_ph_shutter():
     yield from bps.abs_set(ph_open_cmd, 1)
     yield from bps.sleep(3)
     print("Done.")
+
 
 def close_ph_shutter():
     print("Closing photon shutter...")

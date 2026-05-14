@@ -168,9 +168,9 @@ RE.md["group"] = "HEX"
 RE.md["beamline_id"] = "27-ID-1"
 
 
-from ophyd_async.core import config_ophyd_async_logging
-
-config_ophyd_async_logging()
+# Enable logs from within ophyd-async
+# from ophyd_async.core import config_ophyd_async_logging
+# config_ophyd_async_logging()
 
 
 def reset_scan_id(scan_id=0):

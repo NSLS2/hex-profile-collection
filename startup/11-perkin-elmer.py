@@ -214,11 +214,11 @@ class HEXPerkinElmer(ContinuousAcquisitionTrigger, PerkinElmerDetector):
     # roi4 = Cpt(ROIPlugin, 'ROI4:')
 
 
-try:
+# try:
     # PE1 detector configurations:
-    pe1_pv_prefix = "XF:27ID1-ES{PE-Det:1}"
-    pe1 = HEXPerkinElmer(pe1_pv_prefix, name="pe1", read_attrs=["tiff"])
-except:
-    print("Perkin Elmer not connected...")
+    # pe1_pv_prefix = "XF:27ID1-ES{PE-Det:1}"
+    # pe1 = HEXPerkinElmer(pe1_pv_prefix, name="pe1", read_attrs=["tiff"])
+# except:
+print("Perkin Elmer not connected...")
 
 file_loading_timer.stop_timer(__file__)

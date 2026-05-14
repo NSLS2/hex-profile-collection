@@ -20,6 +20,12 @@ TOMO_ROTARY_STAGE_VELO_RESET_MAX = 30
 TOMO_ROTARY_STAGE_VELO_SCAN_MAX = 60
 
 
+# def close_shutter():
+#     """Close the shutter after the scan."""
+#     yield from bps.mv(ph_shutter, "Close")
+#     yield from bps.sleep(2)
+
+
 def post_tomo_fly_cleanup():
     """Cleanup to perform at the end of every flyscan"""
 
@@ -39,7 +45,7 @@ def software_flyscan(
     yield from bps.stage_all(*detectors)
 
     trigger_info = TriggerInfo(
-        number_of_triggers=num_images,
+        number_of_events=num_images,
         trigger=DetectorTrigger.EDGE_TRIGGER,
         livetime=exposure_time,
         deadtime=0.005,
@@ -98,10 +104,9 @@ def tomo_dark_flat(
     # for detector in detectors:
     #     if detector == "kinetix1":
     #         detectors_objs.append(kinetix1)
-    
+
     if detectors is None or detectors == ["kinetix1"]:
         detectors = [kinetix1]
-
 
     if use_shutter:
         if (yield from bps.rd(fe_shutter_status)) != 1:
@@ -382,8 +387,8 @@ def tomo_loop(
     start_deg=0,
     stop_deg=180,
     lead_angle=10,
-    num_flat_images = 50,
-    num_dark_images = 20,
+    num_flat_images=50,
+    num_dark_images=20,
     skip_tomo_num=-1,
     time_trigger=True,
     use_shutter=True,
@@ -501,10 +506,11 @@ def tomo_y_scan_loop(
         # if skip_tomo_num > 0:
         #     scan_countdown -= 1
 
-            #if scan_countdown == 0:
-            #    print("Taking dark, flat...")
-            #    yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
-            #    scan_countdown = skip_tomo_num        
+        # if scan_countdown == 0:
+        #    print("Taking dark, flat...")
+        #    yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
+        #    scan_countdown = skip_tomo_num
+
     # yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
     yield from bps.mv(sample_tower.vertical_y, pre_scan_position)
 

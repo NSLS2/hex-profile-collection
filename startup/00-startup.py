@@ -25,11 +25,13 @@ from IPython.terminal.prompts import Prompts, Token
 from nslsii import configure_base, configure_kafka_publisher
 from ophyd.signal import EpicsSignalBase
 from redis_json_dict import RedisJSONDict
+
 from tiled.client import from_uri
 
 import bluesky.plan_stubs as bps
 
 from nslsii.re_subs import BlueskyDocJSONWriter, BlueskyDocStreamPrinter
+from nslsii.utils import open_redis_client
 
 try:
     from bluesky_queueserver import is_re_worker_active
@@ -106,7 +108,7 @@ EpicsSignalBase.set_defaults(timeout=10, connection_timeout=10)
 
 # event_loop = asyncio.get_event_loop()
 # RE = RunEngine(loop=event_loop)
-RE = RunEngine()
+RE = RunEngine(RedisJSONDict(open_redis_client("xf27id1-hex-redis1.nsls2.bnl.gov", redis_ssl=True), ""))
 # RE.subscribe(bec)
 # RE.preprocessors.append(sd)
 
@@ -157,7 +159,7 @@ if not is_re_worker_active():
 
 # TODO: Revert back to real redis
 # RE.md = {"data_session": "pass-318988", "cycle": "2026-1", "tiled_access_tags": ["pass-318988"]}
-RE.md = RedisJSONDict(redis.Redis("info.hex.nsls2.bnl.gov", 6379), prefix="")
+# RE.md = RedisJSONDict(redis.Redis("info.hex.nsls2.bnl.gov", 6379), prefix="")
 
 
 # Set some metadata that never changes.

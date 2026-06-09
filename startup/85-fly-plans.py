@@ -351,8 +351,9 @@ def tomo_flyscan(
         current_pos = yield from bps.rd(tomo_rot_axis)
 
     print("Completing...")
+    # Set flush period to something scaled by exposure time, to avoid calling flush 1000 times.
     yield from bps.collect_while_completing(
-        all_detectors, all_detectors, flush_period=1, stream_name="tomo"
+        all_detectors, all_detectors, flush_period=exposure_time * 100 if exposure_time > 0.01 else 1, stream_name="tomo"
     )
     yield from bps.unstage_all(*all_detectors)
 

@@ -215,9 +215,9 @@ class HEXPerkinElmer(ContinuousAcquisitionTrigger, PerkinElmerDetector):
 
 
 # try:
-    # PE1 detector configurations:
-    # pe1_pv_prefix = "XF:27ID1-ES{PE-Det:1}"
-    # pe1 = HEXPerkinElmer(pe1_pv_prefix, name="pe1", read_attrs=["tiff"])
+# PE1 detector configurations:
+# pe1_pv_prefix = "XF:27ID1-ES{PE-Det:1}"
+# pe1 = HEXPerkinElmer(pe1_pv_prefix, name="pe1", read_attrs=["tiff"])
 # except:
 print("Perkin Elmer not connected...")
 

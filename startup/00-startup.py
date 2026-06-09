@@ -11,6 +11,7 @@ import time as ttime
 import warnings
 from pathlib import Path
 
+import bluesky.plan_stubs as bps
 import epicscorelibs.path.pyepics
 import matplotlib.pyplot as plt
 import nslsii
@@ -23,15 +24,11 @@ from databroker.v0 import Broker
 from IPython import get_ipython
 from IPython.terminal.prompts import Prompts, Token
 from nslsii import configure_base, configure_kafka_publisher
-from ophyd.signal import EpicsSignalBase
-from redis_json_dict import RedisJSONDict
-
-from tiled.client import from_uri
-
-import bluesky.plan_stubs as bps
-
 from nslsii.re_subs import BlueskyDocJSONWriter, BlueskyDocStreamPrinter
 from nslsii.utils import open_redis_client
+from ophyd.signal import EpicsSignalBase
+from redis_json_dict import RedisJSONDict
+from tiled.client import from_uri
 
 try:
     from bluesky_queueserver import is_re_worker_active
@@ -39,6 +36,7 @@ except ImportError:
     # TODO: delete this when 'bluesky_queueserver' is distributed as part of collection environment
     def is_re_worker_active():
         return False
+
 
 # RUNNING_IN_NSLS2_CI = os.environ["NSLS2_PROFILE_CI"] == "YES"
 # RUNNING_IN_NSLS2_CI = os.environ["NSLS2_PROFILE_CI"] == False
@@ -108,7 +106,11 @@ EpicsSignalBase.set_defaults(timeout=10, connection_timeout=10)
 
 # event_loop = asyncio.get_event_loop()
 # RE = RunEngine(loop=event_loop)
-RE = RunEngine(RedisJSONDict(open_redis_client("xf27id1-hex-redis1.nsls2.bnl.gov", redis_ssl=True), ""))
+RE = RunEngine(
+    RedisJSONDict(
+        open_redis_client("xf27id1-hex-redis1.nsls2.bnl.gov", redis_ssl=True), ""
+    )
+)
 # RE.subscribe(bec)
 # RE.preprocessors.append(sd)
 
@@ -116,7 +118,7 @@ tiled_writing_client = from_uri(
     "https://tiled.nsls2.bnl.gov/api/v1/metadata/hex/raw",
     api_key=os.environ["TILED_BLUESKY_WRITING_API_KEY_HEX"],
 )
-tiled_writing_client.context.http_client.headers['tiled-qos'] = 'acquisition'
+tiled_writing_client.context.http_client.headers["tiled-qos"] = "acquisition"
 
 
 tw = TiledWriter(tiled_writing_client)
@@ -127,9 +129,9 @@ if not is_re_worker_active():
     c = tiled_reading_client = from_uri(
         "https://tiled.nsls2.bnl.gov/api/v1/metadata/hex/raw",
         include_data_sources=True,
-        #username=None
+        # username=None
     )
-    tiled_reading_client.context.http_client.headers['tiled-qos'] = 'acquisition'
+    tiled_reading_client.context.http_client.headers["tiled-qos"] = "acquisition"
 
 
 def logout():

@@ -68,4 +68,3 @@ qserver-gui = "queue-monitor --http-server-uri https://xf27id1-hex-qs1.nsls2.bnl
 terminal = {features=["profile", "terminal"], solve-group="profile"}
 qs = {features=["profile", "qs"], solve-group="profile"}
 qsgui = {features=["profile", "qsgui"], solve-group="profile"}
-

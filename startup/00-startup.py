@@ -116,6 +116,7 @@ tiled_writing_client = from_uri(
     "https://tiled.nsls2.bnl.gov/api/v1/metadata/hex/raw",
     api_key=os.environ["TILED_BLUESKY_WRITING_API_KEY_HEX"],
 )
+tiled_writing_client.context.http_client.headers['tiled-qos'] = 'acquisition'
 
 
 tw = TiledWriter(tiled_writing_client)
@@ -128,6 +129,7 @@ if not is_re_worker_active():
         include_data_sources=True,
         #username=None
     )
+    tiled_reading_client.context.http_client.headers['tiled-qos'] = 'acquisition'
 
 
 def logout():

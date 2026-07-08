@@ -21,7 +21,6 @@ from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
     DetectorTrigger,
-    DetectorWriter,
     SignalRW,
     StandardDetector,
     TriggerInfo,
@@ -44,7 +43,7 @@ def connect_to_panda(panda_id):
 
     print(f"Connecting to Panda {panda_id}...")
     with init_devices(mock=RUNNING_IN_NSLS2_CI):
-        panda_path_provider = ProposalNumYMDPathProvider(default_filename_provider)
+        panda_path_provider = NSLS2PathProvider(RE.md, default_filename_provider)
         panda = HDFPanda(
             f"XF:27ID1-ES{{PANDA:{panda_id}}}:",
             panda_path_provider,

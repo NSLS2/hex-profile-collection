@@ -20,46 +20,46 @@ import uuid
 from datetime import date
 
 from ophyd_async.core import PathInfo, UUIDFilenameProvider, YMDPathProvider
+from nslsii.ophyd_async.providers import NSLS2PathProvider
 
+# class ProposalNumYMDPathProvider(YMDPathProvider):
 
-class ProposalNumYMDPathProvider(YMDPathProvider):
+#     def __init__(self, filename_provider, use_default=False, **kwargs):
 
-    def __init__(self, filename_provider, use_default=False, **kwargs):
+#         self._use_default = use_default
+#         super().__init__(filename_provider, HEX_PROPOSAL_DIR_ROOT, **kwargs)
 
-        self._use_default = use_default
-        super().__init__(filename_provider, HEX_PROPOSAL_DIR_ROOT, **kwargs)
+#     def __call__(self, device_name=None):
+#         # self._directory_path is /nsls2/data/hex/proposals
+#         # This never changes.
+#         # RE.md['cycle'] -> 2024-2
+#         # RE.md['proposal'] -> 'pass-123456'
+#         cycle = RE.md["cycle"]
+#         if "Beamline Commissioning" in RE.md.get("proposal", {}).get("type", ""):
+#             cycle = "commissioning"
 
-    def __call__(self, device_name=None):
-        # self._directory_path is /nsls2/data/hex/proposals
-        # This never changes.
-        # RE.md['cycle'] -> 2024-2
-        # RE.md['proposal'] -> 'pass-123456'
-        cycle = RE.md["cycle"]
-        if "Beamline Commissioning" in RE.md.get("proposal", {}).get("type", ""):
-            cycle = "commissioning"
+#         proposal_assets = (
+#             self._base_directory_path / cycle / RE.md["data_session"] / "assets"
+#         )
+#         current_date = Path(date.today().strftime(f"%Y"))
+#         if device_name is None:
+#             ymd_dir_path = current_date
+#         elif device_name == "pilatus_det":
+#             ymd_dir_path = Path("default") / current_date
+#         elif self._device_name_as_base_dir:
+#             ymd_dir_path = current_date / device_name
+#         else:
+#             ymd_dir_path = device_name / current_date
 
-        proposal_assets = (
-            self._base_directory_path / cycle / RE.md["data_session"] / "assets"
-        )
-        current_date = Path(date.today().strftime(f"%Y"))
-        if device_name is None:
-            ymd_dir_path = current_date
-        elif device_name == "pilatus_det":
-            ymd_dir_path = Path("default") / current_date
-        elif self._device_name_as_base_dir:
-            ymd_dir_path = current_date / device_name
-        else:
-            ymd_dir_path = device_name / current_date
+#         final_dir_path = (
+#             proposal_assets / ymd_dir_path / f"scan_{str(RE.md['scan_id']).zfill(5)}"
+#         )
 
-        final_dir_path = (
-            proposal_assets / ymd_dir_path / f"scan_{str(RE.md['scan_id']).zfill(5)}"
-        )
+#         filename = self._filename_provider(device_name=device_name)
 
-        filename = self._filename_provider(device_name=device_name)
-
-        return PathInfo(
-            directory_path=final_dir_path, filename=filename, create_dir_depth=-4
-        )
+#         return PathInfo(
+#             directory_path=final_dir_path, filename=filename, create_dir_depth=-4
+#         )
 
 
 # class ScanIDDirectoryProvider(UUIDDirectoryProvider):

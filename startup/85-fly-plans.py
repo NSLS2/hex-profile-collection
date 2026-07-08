@@ -269,14 +269,14 @@ def tomo_flyscan(
 
     det_trigger_info = TriggerInfo(
         number_of_events=num_images,
-        trigger=DetectorTrigger.EDGE_TRIGGER,
+        trigger=DetectorTrigger.EXTERNAL_EDGE,
         livetime=exposure_time,
         deadtime=0.001,
     )
 
     panda_trigger_info = TriggerInfo(
         number_of_events=num_images,
-        trigger=DetectorTrigger.CONSTANT_GATE,
+        trigger=DetectorTrigger.EXTERNAL_LEVEL,
         livetime=acquire_period,
         deadtime=0.0001,
     )
@@ -328,9 +328,10 @@ def tomo_flyscan(
     print(f"\n\nExecuting tomography scan with number number: {RE.md['scan_id']}...\n")
 
     for det in detectors:
-        det._writer._path_provider._filename_provider.set_frame_type(TomoFrameType.proj)
-        if hasattr(det.fileio, "queue_size"):
-            yield from bps.mv(det.fileio.queue_size, num_images * 2)
+        for data_logic in det._data_logics:
+            data_logic.path_provider._filename_provider.set_frame_type(TomoFrameType.proj)
+        if hasattr(det.hdf, "queue_size"):
+            yield from bps.mv(det.hdf.queue_size, num_images * 2)
 
     # Stage All!
     yield from bps.stage_all(*all_detectors)
@@ -374,7 +375,7 @@ def tomo_flyscan(
     captured = {}
     captured[panda.name] = yield from bps.rd(panda.data.num_captured)
     for det in detectors:
-        captured[det.name] = yield from bps.rd(det.fileio.num_captured)
+        captured[det.name] = yield from bps.rd(det.hdf.num_captured)
 
     print("Number frames captured:\n")
     for cap in captured.keys():

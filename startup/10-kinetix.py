@@ -9,7 +9,6 @@ from collections.abc import AsyncGenerator, AsyncIterator
 from dataclasses import dataclass
 from enum import Enum
 
-from ophyd import EpicsSignalRO
 from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
@@ -21,7 +20,10 @@ from ophyd_async.core import (
     wait_for_value,
     SignalR,
     PathProvider,
-    NotConnectedError
+    NotConnectedError,
+    StreamableDataProvider,
+    StaticPathProvider,
+    UUIDFilenameProvider,
 )
 from typing import Annotated as A
 from ophyd_async.epics.core import stop_busy_record, PvSuffix
@@ -34,11 +36,26 @@ from ophyd_async.epics.adcore import (
     ADWriterFactory,
     AreaDetector,
     NDPluginBaseIO,
+    NDFileHDF5IO,
 )
 from ophyd_async.epics.core import PvSuffix, epics_signal_rw_rbv
 from ophyd_async.epics.adkinetix import KinetixDetector
 from bluesky.protocols import StreamAsset
 
+class ADHDFDataLogicNoSWMR(ADHDFDataLogic):
+    """Override ADHDFDataLogic to disable SWMR mode."""
+
+    async def prepare_unbounded(self, datakey_name: str) -> StreamableDataProvider:
+        sres_data_provider = await super().prepare_unbounded(datakey_name)
+        await self.writer.swmr_mode.set(False)
+        sres_data_provider.flush_signal = None
+        return sres_data_provider
+
+    async def stop(self) -> None:
+        # Increase the timeout to 60 seconds to ensure the capture stops properly.
+        # It seems the time it takes to close the hdf5 file when writing to network
+        # storage is typically longer than the default 10s T/O
+        await stop_busy_record(self.writer.capture, timeout=60)
 
 # class NDFileHDF5IOWithQueueFree(NDFileHDFIO):
 #     queue_free: A[SignalR[int], PvSuffix("QueueFree")]
@@ -107,7 +124,7 @@ class HEXKinetixDetector(KinetixDetector):
     @AsyncStatus.wrap
     async def unstage(self) -> None:
         # Stop data writing.
-        super().unstage()
+        await super().unstage()
 
         # # Set to continuous internal trigger, and start acquiring
         # await self.driver.trigger_mode.set("Internal")
@@ -120,9 +137,24 @@ def connect_to_kinetix(kinetix_id):
     print(f"Connecting to kinetix {kinetix_id}...")
     with init_devices(mock=RUNNING_IN_NSLS2_CI, timeout=1):
         kinetix_path_provider = NSLS2PathProvider(RE.md, default_filename_provider)
+        # kinetix_path_provider = StaticPathProvider(UUIDFilenameProvider(), Path("/tmp"))
         kinetix = HEXKinetixDetector(
             f"XF:27ID1-BI{{Kinetix-Det:{kinetix_id}}}",
-            ADWriterFactory.hdf(kinetix_path_provider),
+            ADWriterFactory(
+                writer_cls=NDFileHDF5IO,
+                writer_suffix="HDF1:",
+                writer_name="hdf",
+                datakey_suffix="",
+                array_description=None,
+                data_logic_factory=lambda writer, desc, driver, plugins: ADHDFDataLogicNoSWMR(
+                    array_description=desc,
+                    path_provider=kinetix_path_provider,
+                    driver=driver,
+                    writer=writer,
+                    plugins=list(plugins),
+                    datakey_suffix="",
+                ),
+            ),
             name=f"kinetix-det{kinetix_id}",
         )
 

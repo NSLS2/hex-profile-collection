@@ -329,7 +329,8 @@ def tomo_flyscan(
 
     for det in detectors:
         for data_logic in det._data_logics:
-            data_logic.path_provider._filename_provider.set_frame_type(TomoFrameType.proj)
+            pass
+            # data_logic.path_provider._filename_provider.set_frame_type(TomoFrameType.proj)
         if hasattr(det.hdf, "queue_size"):
             yield from bps.mv(det.hdf.queue_size, num_images * 2)
 
@@ -356,8 +357,9 @@ def tomo_flyscan(
     print("Completing...")
     # Set flush period to something scaled by exposure time, to avoid calling flush 1000 times.
     yield from bps.collect_while_completing(
-        all_detectors, all_detectors, flush_period=max(3, exposure_time), stream_name="tomo"
+        all_detectors, all_detectors, flush_period=max(1, exposure_time), stream_name="tomo"
     )
+
     yield from bps.unstage_all(*all_detectors)
 
     # Make sure rotation movement is done

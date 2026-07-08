@@ -8,6 +8,8 @@ ZERO_OFFSET = 39660
 
 import numpy as np
 from ophyd_async.epics.adkinetix import KinetixReadoutMode
+import bluesky.plans as bp
+import bluesky.plan_stubs as bps
 
 DETECTOR_MAX_FRAMERATES = {
     KinetixReadoutMode.SENSITIVITY: 50,
@@ -353,7 +355,7 @@ def tomo_flyscan(
     print("Completing...")
     # Set flush period to something scaled by exposure time, to avoid calling flush 1000 times.
     yield from bps.collect_while_completing(
-        all_detectors, all_detectors, flush_period=exposure_time * 100 if exposure_time > 0.01 else 1, stream_name="tomo"
+        all_detectors, all_detectors, flush_period=max(3, exposure_time), stream_name="tomo"
     )
     yield from bps.unstage_all(*all_detectors)
 

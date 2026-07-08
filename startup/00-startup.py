@@ -16,6 +16,7 @@ import epicscorelibs.path.pyepics
 import matplotlib.pyplot as plt
 import nslsii
 import ophyd.signal
+from typing import Any
 import redis
 from bluesky.callbacks.broker import post_run, verify_files_saved
 # from bluesky.callbacks.tiled_writer import TiledWriter
@@ -27,13 +28,13 @@ from IPython.terminal.prompts import Prompts, Token
 from nslsii import configure_base, configure_kafka_publisher
 from nslsii.re_subs import BlueskyDocJSONWriter, BlueskyDocStreamPrinter
 from ophyd.signal import EpicsSignalBase
+from pprint import pprint
 from redis_json_dict import RedisJSONDict
 
 from tiled.client import from_uri
 
 import bluesky.plan_stubs as bps
 
-from nslsii.re_subs import BlueskyDocJSONWriter, BlueskyDocStreamPrinter
 from nslsii.utils import open_redis_client
 
 try:
@@ -68,6 +69,8 @@ class ProposalIDPrompt(Prompts):
 if not is_re_worker_active():
     ip = get_ipython()
     ip.prompts = ProposalIDPrompt(ip)
+
+os.environ["REDIS_HOST"] = "xf27id1-hex-redis1.nsls2.bnl.gov"
 
 
 class FileLoadingTimer:
@@ -146,7 +149,10 @@ def logout():
 
 
 jw = BlueskyDocJSONWriter()
-RE.subscribe(jw)
+# RE.subscribe(jw)
+
+def show_docs(name: str, doc: dict[str, Any]):
+    pprint(doc)
 
 configure_kafka_publisher(RE, beamline_name="hex")
 

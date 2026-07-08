@@ -10,7 +10,6 @@ from ophyd_async.core import (
     DEFAULT_TIMEOUT,
     AsyncStatus,
     DetectorTrigger,
-    DetectorWriter,
     SignalRW,
     StandardDetector,
     TriggerInfo,

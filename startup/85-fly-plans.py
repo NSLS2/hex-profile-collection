@@ -8,6 +8,8 @@ ZERO_OFFSET = 39660
 
 import numpy as np
 from ophyd_async.epics.adkinetix import KinetixReadoutMode
+import bluesky.plans as bp
+import bluesky.plan_stubs as bps
 
 DETECTOR_MAX_FRAMERATES = {
     KinetixReadoutMode.SENSITIVITY: 50,
@@ -18,6 +20,12 @@ DETECTOR_MAX_FRAMERATES = {
 
 TOMO_ROTARY_STAGE_VELO_RESET_MAX = 30
 TOMO_ROTARY_STAGE_VELO_SCAN_MAX = 60
+
+
+# def close_shutter():
+#     """Close the shutter after the scan."""
+#     yield from bps.mv(ph_shutter, "Close")
+#     yield from bps.sleep(2)
 
 
 def post_tomo_fly_cleanup():
@@ -39,7 +47,7 @@ def software_flyscan(
     yield from bps.stage_all(*detectors)
 
     trigger_info = TriggerInfo(
-        number_of_triggers=num_images,
+        number_of_events=num_images,
         trigger=DetectorTrigger.EDGE_TRIGGER,
         livetime=exposure_time,
         deadtime=0.005,
@@ -98,10 +106,9 @@ def tomo_dark_flat(
     # for detector in detectors:
     #     if detector == "kinetix1":
     #         detectors_objs.append(kinetix1)
-    
+
     if detectors is None or detectors == ["kinetix1"]:
         detectors = [kinetix1]
-
 
     if use_shutter:
         if (yield from bps.rd(fe_shutter_status)) != 1:
@@ -262,14 +269,14 @@ def tomo_flyscan(
 
     det_trigger_info = TriggerInfo(
         number_of_events=num_images,
-        trigger=DetectorTrigger.EDGE_TRIGGER,
+        trigger=DetectorTrigger.EXTERNAL_EDGE,
         livetime=exposure_time,
         deadtime=0.001,
     )
 
     panda_trigger_info = TriggerInfo(
         number_of_events=num_images,
-        trigger=DetectorTrigger.CONSTANT_GATE,
+        trigger=DetectorTrigger.EXTERNAL_LEVEL,
         livetime=acquire_period,
         deadtime=0.0001,
     )
@@ -321,9 +328,11 @@ def tomo_flyscan(
     print(f"\n\nExecuting tomography scan with number number: {RE.md['scan_id']}...\n")
 
     for det in detectors:
-        det._writer._path_provider._filename_provider.set_frame_type(TomoFrameType.proj)
-        if hasattr(det.fileio, "queue_size"):
-            yield from bps.mv(det.fileio.queue_size, num_images * 2)
+        for data_logic in det._data_logics:
+            pass
+            # data_logic.path_provider._filename_provider.set_frame_type(TomoFrameType.proj)
+        if hasattr(det.hdf, "queue_size"):
+            yield from bps.mv(det.hdf.queue_size, num_images * 2)
 
     # Stage All!
     yield from bps.stage_all(*all_detectors)
@@ -346,9 +355,11 @@ def tomo_flyscan(
         current_pos = yield from bps.rd(tomo_rot_axis)
 
     print("Completing...")
+    # Set flush period to something scaled by exposure time, to avoid calling flush 1000 times.
     yield from bps.collect_while_completing(
-        all_detectors, all_detectors, flush_period=1, stream_name="tomo"
+        all_detectors, all_detectors, flush_period=max(1, exposure_time), stream_name="tomo"
     )
+
     yield from bps.unstage_all(*all_detectors)
 
     # Make sure rotation movement is done
@@ -366,7 +377,7 @@ def tomo_flyscan(
     captured = {}
     captured[panda.name] = yield from bps.rd(panda.data.num_captured)
     for det in detectors:
-        captured[det.name] = yield from bps.rd(det.fileio.num_captured)
+        captured[det.name] = yield from bps.rd(det.hdf.num_captured)
 
     print("Number frames captured:\n")
     for cap in captured.keys():
@@ -382,8 +393,8 @@ def tomo_loop(
     start_deg=0,
     stop_deg=180,
     lead_angle=10,
-    num_flat_images = 50,
-    num_dark_images = 20,
+    num_flat_images=50,
+    num_dark_images=20,
     skip_tomo_num=-1,
     time_trigger=True,
     use_shutter=True,
@@ -501,10 +512,11 @@ def tomo_y_scan_loop(
         # if skip_tomo_num > 0:
         #     scan_countdown -= 1
 
-            #if scan_countdown == 0:
-            #    print("Taking dark, flat...")
-            #    yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
-            #    scan_countdown = skip_tomo_num        
+        # if scan_countdown == 0:
+        #    print("Taking dark, flat...")
+        #    yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
+        #    scan_countdown = skip_tomo_num
+
     # yield from tomo_dark_flat(exposure_time, dark_flat_offset, detectors=detectors, use_shutter=use_shutter, dark_images=num_dark_images, flat_images=num_flat_images)
     yield from bps.mv(sample_tower.vertical_y, pre_scan_position)
 

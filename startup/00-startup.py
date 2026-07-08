@@ -11,26 +11,30 @@ import time as ttime
 import warnings
 from pathlib import Path
 
+import bluesky.plan_stubs as bps
 import epicscorelibs.path.pyepics
 import matplotlib.pyplot as plt
 import nslsii
 import ophyd.signal
+from typing import Any
 import redis
 from bluesky.callbacks.broker import post_run, verify_files_saved
-from bluesky.callbacks.tiled_writer import TiledWriter
+# from bluesky.callbacks.tiled_writer import TiledWriter
+from bluesky_tiled_plugins import TiledWriter
 from bluesky.run_engine import RunEngine, call_in_bluesky_event_loop
 from databroker.v0 import Broker
 from IPython import get_ipython
 from IPython.terminal.prompts import Prompts, Token
 from nslsii import configure_base, configure_kafka_publisher
+from nslsii.re_subs import BlueskyDocJSONWriter, BlueskyDocStreamPrinter
 from ophyd.signal import EpicsSignalBase
+from pprint import pprint
 from redis_json_dict import RedisJSONDict
 
 from tiled.client import from_uri
 
 import bluesky.plan_stubs as bps
 
-from nslsii.re_subs import BlueskyDocJSONWriter, BlueskyDocStreamPrinter
 from nslsii.utils import open_redis_client
 
 try:
@@ -39,6 +43,7 @@ except ImportError:
     # TODO: delete this when 'bluesky_queueserver' is distributed as part of collection environment
     def is_re_worker_active():
         return False
+
 
 # RUNNING_IN_NSLS2_CI = os.environ["NSLS2_PROFILE_CI"] == "YES"
 # RUNNING_IN_NSLS2_CI = os.environ["NSLS2_PROFILE_CI"] == False
@@ -64,6 +69,8 @@ class ProposalIDPrompt(Prompts):
 if not is_re_worker_active():
     ip = get_ipython()
     ip.prompts = ProposalIDPrompt(ip)
+
+os.environ["REDIS_HOST"] = "xf27id1-hex-redis1.nsls2.bnl.gov"
 
 
 class FileLoadingTimer:
@@ -126,7 +133,7 @@ if not is_re_worker_active():
     c = tiled_reading_client = from_uri(
         "https://tiled.nsls2.bnl.gov/api/v1/metadata/hex/raw",
         include_data_sources=True,
-        #username=None
+        # username=None
     )
 
 
@@ -142,7 +149,10 @@ def logout():
 
 
 jw = BlueskyDocJSONWriter()
-RE.subscribe(jw)
+# RE.subscribe(jw)
+
+def show_docs(name: str, doc: dict[str, Any]):
+    pprint(doc)
 
 configure_kafka_publisher(RE, beamline_name="hex")
 

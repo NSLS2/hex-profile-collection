@@ -25,13 +25,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-python@v5
-
-      - name: Install dev dependencies
-        run: |
-          set -vxeuo pipefail
-          python3 -m pip install pre-commit black isort
-          python3 -m pip list
+      - name: Set up Pixi
+        uses: prefix-dev/setup-pixi@ad1da6449d9e506fd127fd67ab2d054a769f6a94 # v0.11.2
+        with:
+          pixi-version: v0.82.1
+          environments: dev
+          frozen: true
 
       - name: Run pre-commit
-        run: pre-commit run --all-files --show-diff
+        run: pixi run -e dev pre-commit --show-diff

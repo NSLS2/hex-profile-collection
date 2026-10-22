@@ -1,22 +1,39 @@
-default_language_version:
-    python: python3
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+  - repo: local
     hooks:
-    - id: check-yaml
-    - id: end-of-file-fixer
-    - id: trailing-whitespace
-  - repo: https://github.com/ambv/black
-    rev: 25.12.0
-    hooks:
+      - id: check-yaml
+        name: check yaml
+        entry: check-yaml
+        language: system
+        types: [yaml]
+      - id: end-of-file-fixer
+        name: fix end of files
+        entry: end-of-file-fixer
+        language: system
+        types: [text]
+        stages: [pre-commit, pre-push, manual]
+      - id: trailing-whitespace
+        name: trim trailing whitespace
+        entry: trailing-whitespace-fixer
+        language: system
+        types: [text]
+        stages: [pre-commit, pre-push, manual]
       - id: black
-  - repo: https://github.com/pycqa/isort
-    rev: 7.0.0
-    hooks:
+        name: black
+        entry: black
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
       - id: isort
+        name: isort
+        entry: isort
+        language: system
+        types_or: [cython, pyi, python]
+        stages: [pre-commit, pre-merge-commit, pre-push, manual]
+        require_serial: true
         args: ["--profile", "black", "--filter-files", "--line-length", "88"]
-  - repo: https://github.com/kynan/nbstripout
-    rev: 0.8.2
-    hooks:
       - id: nbstripout
+        name: nbstripout
+        entry: nbstripout
+        language: system
+        types: [jupyter]

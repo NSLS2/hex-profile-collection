@@ -1,3 +1,11 @@
+# NOTICE
+
+> [!IMPORTANT]
+> This repository has been archived and not used for HEX anymore. Please refer to https://github.com/NSLS-II-HEX/hextools.
+
+---
+
+
 # NSLS-II-HEX Bluesky Profile
 
 ## Conda environment
